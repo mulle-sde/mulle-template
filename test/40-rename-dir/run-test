@@ -1,0 +1,91 @@
+#! /usr/bin/env bash
+
+[ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
+
+
+# the tests here are wrong, mulle-craft shouldn't b
+run_mulle_template()
+{
+   if [ "$1" = "--clean-env" ]
+   then
+      shift
+
+      log_fluff "####################################"
+      log_fluff ${MULLE_TEMPLATE} --clean-env ${MULLE_TEMPLATE_FLAGS} "$@"
+      log_fluff "####################################"
+
+      exekutor "${MULLE_TEMPLATE}" --clean-env ${MULLE_TEMPLATE_FLAGS} "$@"
+   else
+      log_fluff "####################################"
+      log_fluff ${MULLE_TEMPLATE} ${MULLE_TEMPLATE_FLAGS} "$@"
+      log_fluff "####################################"
+
+      exekutor "${MULLE_TEMPLATE}" ${MULLE_TEMPLATE_FLAGS} "$@"
+   fi
+}
+
+
+expect()
+{
+   local expected="$1"
+   local filename="$2"
+
+   local result
+
+   if ! result="`cat "${filename}" 2> /dev/null`"
+   then
+      fail "${filename} does not exist"
+   fi
+
+   log_debug "${filename}: ${result}"
+   if [ "${expected}" != "${result}" ]
+   then
+      fail "${filename}: \"${result}\" != \"${expected}\""
+   fi
+}
+
+
+main()
+{
+   MULLE_TEMPLATE_FLAGS="$@"
+
+   _options_mini_main "$@"
+
+   MULLE_TEMPLATE_EXTENSION_PATH="${PWD}"
+   export MULLE_TEMPLATE_EXTENSION_PATH
+
+   local directory
+
+   directory="`make_tmp_directory`"
+   directory="${directory:-/tmp/build}"
+
+
+   #
+   # Copy to non existing directory
+   #
+   run_mulle_template --clean-env --source environment DIRECTORY "${directory}"
+   expect "a-z" "${directory}/dir/output.txt"
+
+   log_verbose "----- #1 PASSED -----"
+
+
+   log_info "----- ALL PASSED -----"
+
+   rmdir_safer "${directory}"
+}
+
+
+
+init()
+{
+   MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env libexec-dir`" || exit 1
+
+   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" "file" || exit 1
+
+   MULLE_TEMPLATE="${MULLE_TEMPLATE:-${PWD}/../../mulle-template}"
+}
+
+
+init "$@"
+main "$@"
+

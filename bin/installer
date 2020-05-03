@@ -173,8 +173,8 @@ main()
    local share
 
    bin="${prefix}/bin"
-   libexec="${prefix}/libexec/mulle-sde"
-   share="${prefix}/share/mulle-sde"
+   libexec="${prefix}/libexec/mulle-template"
+   share="${prefix}/share/mulle-template"
 
    if [ ! -d "${bin}" ]
    then
@@ -186,30 +186,12 @@ main()
       mkdir -p "${libexec}" || installer_fail "could not create ${libexec}"
    fi
 
-   install -m "${mode}" "mulle-sde" "${bin}/mulle-sde" || exit 1
-   printf "install: ${C_MAGENTA}${C_BOLD}%s${C_RESET}\n" "${bin}/mulle-sde" >&2
+   install -m "${mode}" "mulle-template" "${bin}/mulle-template" || exit 1
+   printf "install: ${C_MAGENTA}${C_BOLD}%s${C_RESET}\n" "${bin}/mulle-template" >&2
 
    for i in src/mulle*.sh
    do
       install ${VERBOSE} -m "${mode}" "${i}" "${libexec}" || exit 1
-   done
-
-   EXTENSION_DIR="${share}/extensions"
-   mkdir -p "${EXTENSION_DIR}" || exit 1
-   cp -Ra ${VERBOSE} "src/mulle-sde" "${EXTENSION_DIR}/" || exit 1
-
-   local share
-
-   share="${prefix}/share/mulle-env"
-
-   #
-   # install mulle-env plugins
-   #
-   PLUGIN_DIR="${share}/plugins"
-   mkdir -p "${PLUGIN_DIR}" || exit 1
-   for i in src/mulle-env/plugins/*.sh
-   do
-      cp -a ${VERBOSE} "${i}" "${PLUGIN_DIR}/" || exit 1
    done
 }
 

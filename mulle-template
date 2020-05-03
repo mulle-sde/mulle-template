@@ -1,0 +1,442 @@
+#! /usr/bin/env bash
+#
+#   Copyright (c) 2018 Nat! - Mulle kybernetiK
+#   All rights reserved.
+#
+#   Redistribution and use in source and binary forms, with or without
+#   modification, are permitted provided that the following conditions are met:
+#
+#   Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+#   Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+#   Neither the name of Mulle kybernetiK nor the names of its contributors
+#   may be used to endorse or promote products derived from this software
+#   without specific prior written permission.
+#
+#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#   POSSIBILITY OF SUCH DAMAGE.
+#
+[ "${TRACE}" = 'YES' -o "${MULLE_TEMPLATE_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
+
+
+MULLE_EXECUTABLE_VERSION=0.0.1
+MULLE_EXECUTABLE_BASHFUNCTIONS="3.2"
+
+
+print_flags()
+{
+   local delimiter
+
+   delimiter="           : "
+
+   echo "   -f   ${delimiter}force operation"
+   echo "   -DKEY=VALUE     : define environment variable"
+   echo "   --clean-env     : run with clean environment (must be first flag!)"
+   echo "   --source <file> : read file to define environment"
+
+   options_technical_flags_usage "${delimiter}"
+}
+
+
+#
+# This is the main user interface to mulle-sde
+# sorta like git
+#
+print_commands()
+{
+   local show_all="${1:-NO}"
+
+   SHOWN_COMMANDS="\
+   generate        : create a source file from a template"
+
+   HIDDEN_COMMANDS="\
+   libexec-dir     : print path to mulle-sde libexec
+   uname           : mulle-templates simplified uname(1)
+   version         : mulle-templates version"
+
+   printf "%s\n" "${SHOWN_COMMANDS}" | LC_ALL=C sort
+
+   if [ "${show_all}" != 'NO' ]
+   then
+      printf "%s\n" "${HIDDEN_COMMANDS}" | LC_ALL=C sort
+   fi
+}
+
+
+print_usage()
+{
+   local verbose="${1:-NO}"
+
+   cat <<EOF
+Usage:
+   ${MULLE_USAGE_NAME} [flags] [command] [options]
+
+   Generate files from templates, by substituting keys enveloped in <| |> with
+   values found in the environment with the same key. You can generate a single
+   file from a single template or multiple files with a directory containing
+   templates.
+
+   If a key is missing you can supply a default replacement text with
+   <|KEY:-default|>. So here is a small example file \"file.template\":
+
+      <|DATE|>
+      Hello Mr. <|NAME:-Unknown|>
+      Yours
+         <|AUTHOR|>
+
+   This command will print the expanded contents of file.template:
+
+   ${MULLE_USAGE_NAME} --clean-env -DAUTHOR="moi" generate file.template -
+
+   See  \`${MULLE_USAGE_NAME} generate help\` or more information.
+
+Flags:
+EOF
+   print_flags "${verbose}" | LC_ALL=C sort
+
+
+   cat <<EOF
+
+Commands:
+EOF
+
+   print_commands "${verbose}" | LC_ALL=C sort
+
+   if [ "${verbose}" = 'NO' ]
+   then
+      cat <<EOF
+      (use mulle-sde -v help to show more commands)
+EOF
+   fi
+
+   cat <<EOF
+
+   Options are command specific. Use ${MULLE_USAGE_NAME} <command> -h for help.
+EOF
+}
+
+
+usage()
+{
+   [ "$#" -ne 0 ] && log_error "$*"
+
+   print_usage "${MULLE_FLAG_LOG_VERBOSE}" >&2
+
+   exit 1
+}
+
+
+set_custom_define()
+{
+   log_entry "set_custom_define" "$@"
+
+   local keyvalue="$1"
+
+   local key
+   local value
+
+   key="${keyvalue%%=*}"
+
+   if [ -z "${key}" ]
+   then
+      key="${keyvalue}"
+   else
+      value="${keyvalue#*=}"
+   fi
+
+   if [ "${key}" != "`printf "%q" "${key}"`" ]
+   then
+      fail "Invalid Environment key \"${key}\""
+   fi
+
+   eval "export ${key}='${value}'"
+
+   log_fluff "Set environment variable \"${key}\" to \"${!key}\""
+}
+
+
+set_custom_environment()
+{
+   log_entry "set_custom_environment" "$@"
+
+   local defines="$1"
+
+   local i
+
+   set -o noglob; IFS=$'\n'
+   for i in ${defines}
+   do
+      set +o noglob; IFS="${DEFAULT_IFS}"
+
+      set_custom_define "${i#-D}"
+   done
+   set +o noglob; IFS="${DEFAULT_IFS}"
+}
+
+
+main()
+{
+   local MULLE_FLAG_MAGNUM_FORCE='NO'
+
+   # technical flags
+   local MULLE_TRACE
+   local MULLE_FLAG_EXEKUTOR_DRY_RUN='NO'
+   local MULLE_FLAG_LOG_LOCAL='NO'
+   local MULLE_FLAG_LOG_DEBUG='NO'
+   local MULLE_FLAG_LOG_EXEKUTOR='NO'
+   local MULLE_FLAG_LOG_FLUFF='NO'
+   local MULLE_FLAG_LOG_SCRIPTS='NO'
+   local MULLE_FLAG_LOG_SETTINGS='NO'
+   local MULLE_FLAG_LOG_VERBOSE='NO'
+   local MULLE_FLAG_LOG_MERGE='NO'
+   local MULLE_TRACE_POSTPONE='NO'
+
+   local defines
+
+   #
+   # simple option handling
+   #
+   while [ $# -ne 0 ]
+   do
+      if options_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      case "$1" in
+         -h|--help|help)
+            usage
+         ;;
+
+         -f|--force)
+            MULLE_FLAG_MAGNUM_FORCE='YES'
+         ;;
+
+         --clean-env)
+            fail "$1 must be the very first flag in the commandline"
+         ;;
+
+         --version)
+            printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
+            exit 0
+         ;;
+
+         --list-flags)
+            (
+               echo "\
+--force
+-D"
+               options_technical_flags --list-technical-flags
+            ) | sort
+            exit 0
+         ;;
+
+         -D*)
+            r_add_line "${MULLE_DEFINE_FLAGS}" "$1"
+            MULLE_DEFINE_FLAGS="${RVAL}"
+
+            r_add_line "${defines}" "$1"
+            defines="${RVAL}"
+         ;;
+
+         --source)
+            [ $# -eq 1 ] && fail "Missing argument to \"$1\""
+            shift
+
+            . "$1" || fail "Reading $1 produced $? as return value, indicating failure"
+         ;;
+
+         -*)
+            usage "Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   options_setup_trace "${MULLE_TRACE}"
+
+
+   local cmd
+
+   cmd="$1"
+   [ $# -ne 0 ] && shift
+
+   set_custom_environment "${defines}"
+
+   case "${cmd}" in
+      bash-completion)
+         printf "%s\n" "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-bash-completion.sh"
+      ;;
+
+      commands)
+         echo "
+bash-completion
+clean
+environment
+libexec-dir
+library-path
+generate
+uname
+version"
+         exit 0
+      ;;
+
+      fsed|filename-sed)
+         # shellcheck source=src/mulle-template-generate.sh
+         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" || internal_fail "load fail"
+         template_generate_main "fsed" "$@"
+      ;;
+      csed|contents-sed)
+         # shellcheck source=src/mulle-template-generate.sh
+         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" || internal_fail "load fail"
+         template_generate_main "csed" "$@"
+      ;;
+
+      generate)
+         # shellcheck source=src/mulle-template-generate.sh
+         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" || internal_fail "load fail"
+         template_generate_main "write" "$@"
+      ;;
+
+      environment)
+         printenv | LC_ALL=C sort
+      ;;
+
+      hostname)
+         rexekutor printf "%s\n" "${MULLE_HOSTNAME}"
+      ;;
+
+
+      libexec-dir|library-path)
+         exekutor printf "%s\n" "${MULLE_TEMPLATE_LIBEXEC_DIR}"
+      ;;
+
+      uname)
+         rexekutor printf "%s\n" "${MULLE_UNAME}"
+      ;;
+
+      version)
+         rexekutor printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
+         return 0
+      ;;
+
+      ""|help)
+         usage
+      ;;
+
+      *)
+         # shellcheck source=src/mulle-template-generate.sh
+         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" || internal_fail "load fail"
+
+         template_generate_main write "${cmd}" "$@"
+      ;;
+   esac
+
+   return $rval
+}
+
+
+########
+###
+### INIT
+###
+_init()
+{
+   #
+   # minimal setup exit
+   #
+   if [ "$1" = "version" ]
+   then
+      printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
+      exit 0
+   fi
+
+   if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
+   then
+      MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env libexec-dir 2> /dev/null`"
+      if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
+      then
+         if [ -z "`command -v "${executablepath}"`" ]
+         then
+            echo "Fatal Error: Could not find mulle-bashfunctions-env in PATH ($PATH) - mulle-bashfunctions not installed ?" >&2
+         else
+            echo "Fatal Error: Could not find libexec of mulle-bashfunctions-env ($PWD)" >&2
+         fi
+         exit 1
+      fi
+   fi
+
+   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" "file" || \
+      fail "failed to load bashfunctions from ${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}"
+
+   if [ -z "${MULLE_TEMPLATE_LIBEXEC_DIR}" ]
+   then
+      r_get_libexec_dir "$0" "mulle-sde" "mulle-template-generate.sh"
+      MULLE_TEMPLATE_LIBEXEC_DIR="${RVAL}"
+   fi
+
+   #
+   # minimal setup exit
+   #
+   case "$1" in
+      "libexec-dir"|"library-path")
+         printf "%s\n" "${MULLE_TEMPLATE_LIBEXEC_DIR}"
+         exit 0
+      ;;
+   esac
+
+   #  set -e # more pain then gain in the end
+   #  set -u # doesn't work with my style
+
+   set -o pipefail
+   shopt -s extglob
+}
+###
+### INIT
+###
+########
+
+#
+# reexec with clean environment if very first argument
+#
+_init "$@" # needs params
+
+case "$1" in
+   --clean-env)
+      shift
+
+      if [ "${TRACE}" = 'YES' -o "${MULLE_TEMPLATE_TRACE}" = 'YES' ]
+      then
+         exec env -i \
+               "TRACE=YES" \
+               "MULLE_BASHFUNCTIONS_LIBEXEC_DIR=${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" \
+               "MULLE_TEMPLATE_LIBEXEC_DIR=${MULLE_TEMPLATE_LIBEXEC_DIR}" \
+                "$0" "$@"
+      fi
+      exec env -i \
+               "MULLE_BASHFUNCTIONS_LIBEXEC_DIR=${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" \
+               "MULLE_TEMPLATE_LIBEXEC_DIR=${MULLE_TEMPLATE_LIBEXEC_DIR}" \
+               "$0" "$@"
+   ;;
+esac
+
+call_main "${MULLE_TEMPLATE_FLAGS}" "$@"

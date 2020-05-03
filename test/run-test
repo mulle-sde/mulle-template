@@ -14,11 +14,11 @@ main()
 {
    _options_mini_main "$@"
 
-   MULLE_SDE="`which mulle-sde`" || exit 1
+   MULLE_TEMPLATE="`which mulle-template`" || exit 1
 
    local i
 
-   log_verbose "mulle-sde: `mulle-sde version` (`mulle-sde libexec-dir`)"
+   log_verbose "mulle-template: `mulle-template version` (`mulle-template libexec-dir`)"
 
    for i in "${TEST_DIR}"/*
    do

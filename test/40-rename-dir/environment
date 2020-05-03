@@ -1,0 +1,4 @@
+export DIRECTORY="dir"
+export FILENAME="output"
+export EXTENSION="txt"
+export KEY="-"

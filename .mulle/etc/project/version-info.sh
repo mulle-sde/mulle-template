@@ -4,7 +4,5 @@
 # enough for you. If you don't have this file, there will be
 # not git operations.
 #
-VERSIONFILE="mulle-sde"
+VERSIONFILE="mulle-template"
 VERSIONNAME="MULLE_EXECUTABLE_VERSION"
-VERSIONFILEMIRRORS="\
-src/mulle-sde/craftinfo/version"
