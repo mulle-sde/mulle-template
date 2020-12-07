@@ -18,7 +18,7 @@ mulle-template generate template outputfile
 
 Executable       | Description
 -----------------|--------------------------------
-`mulle-template` |Template generator
+`mulle-template` | Template generator
 
 
 
@@ -74,7 +74,7 @@ Should produce:
 
 ### generate
 
-The **generate** command takes the sed expressions generate from **csed** and
+The **generate** command generates sed expressions with **csed** and
 **fsed** and applies them to the contents of a directory or to a single file.
 
 The filenames are transformed with the **fsed** and the contents of each
@@ -140,7 +140,7 @@ to the generated file. This can be turned off with `--no-permissions`.
 #### --overwrite
 
 Usually **mulle-template** does not overwrite existing files. You can do so
-my either specifing the `--overwrite` option or the `-f` flag (which comes
+by either specifing the `--overwrite` option or the `-f` flag (which comes
 before the `generate` command)
 
 #### --file
@@ -153,9 +153,9 @@ single file from a batch of template files. In combination with
 
 For source files it is often convenient to prepend a copyright header and
 other personal information. If the template has a line containing
-<|HEADER|> only or <|FOOTER|> the contents of the files given by
+<|HEADER|> only or <|FOOTER|> only, then the contents of the files given by
 --header-file or --footer-file are inserted. These contents will also undergo
-further template expansion.
+template expansion.
 
 
 ## Install
@@ -167,7 +167,7 @@ to install mulle-sde.
 ## Documentation
 
 If there is documentation outside of this README it is in the various
-command help texts within **mulle-templaze** or in the
+command help texts within **mulle-template** or in the
 [mulle-sde WiKi](//github.com/mulle-sde/mulle-sde/wiki).
 
 

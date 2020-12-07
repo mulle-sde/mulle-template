@@ -131,6 +131,26 @@ EOF
 }
 
 
+r_append_sed_default_var_expansion()
+{
+   local cmdline="$1"
+   local o="$2"
+   local c="$3"
+   local key="$4"
+   local value="$5"
+
+   [ -z "${c}" ] && internal_fail "can't have no closer"
+
+   r_escaped_sed_replacement "${value}"
+
+   # \(<|[^:|]*\)\(:-[^|]\)\{0,1\}|>
+   # MEMO: the \{0,1\} makes the preceeding capture optional
+
+   r_concat "${cmdline}" "-e 's/${o}${key}\\(:-[^${c:0:1}]*\\)\\{0,1\\}${c}/${RVAL}/g'"
+}
+
+
+
 r_append_sed_var_expansion()
 {
    local cmdline="$1"
@@ -141,10 +161,7 @@ r_append_sed_var_expansion()
 
    r_escaped_sed_replacement "${value}"
 
-   # \(<|[^:|]*\)\(:-[^|]\)\{0,1\}|>
-   # MEMO: the \{0,1\} makes the preceeding capture optional
-
-   r_concat "${cmdline}" "-e 's/${o}${key}\\(:-[^${c:0:1}]*\\)\\{0,1\\}${c}/${RVAL}/g'"
+   r_concat "${cmdline}" "-e 's/${o}${key}${c}/${RVAL}/g'"
 }
 
 
@@ -270,6 +287,7 @@ r_shell_var_sed()
    local o="$1"
    local c="$2"
    local pattern_function="$3"
+   local mode="$4"
 
    log_entry "r_shell_var_sed" "$@"
 
@@ -301,7 +319,13 @@ r_shell_var_sed()
          continue
       fi
 
-      r_append_sed_var_expansion "${cmdline}" "${o}" "${c}" "${key}" "${!key}"
+      if [ "${4}" = "default" ]
+      then
+         r_append_sed_default_var_expansion "${cmdline}" "${o}" "${c}" "${key}" "${!key}"
+      else
+         r_append_sed_var_expansion "${cmdline}" "${o}" "${c}" "${key}" "${!key}"
+      fi
+
       cmdline="${RVAL}"
    done
    IFS=${DEFAULT_IFS}; set +f
@@ -346,7 +370,7 @@ r_template_contents_replacement_seds()
    local cmdline
    local filter
 
-   r_shell_var_sed "${opener}" "${closer}" "${filter}"
+   r_shell_var_sed "${opener}" "${closer}" "${filter}" "default"
    cmdline="${RVAL}"
 
    if [ "${OPTION_DATE_ENVIRONMENT}" = 'YES' ]
