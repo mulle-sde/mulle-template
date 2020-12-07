@@ -302,18 +302,21 @@ version"
 
       fsed|filename-sed)
          # shellcheck source=src/mulle-template-generate.sh
-         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" || internal_fail "load fail"
+         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" \
+         || internal_fail "load fail"
          template_generate_main "fsed" "$@"
       ;;
       csed|contents-sed)
          # shellcheck source=src/mulle-template-generate.sh
-         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" || internal_fail "load fail"
+         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" \
+         || internal_fail "load fail"
          template_generate_main "csed" "$@"
       ;;
 
       generate)
          # shellcheck source=src/mulle-template-generate.sh
-         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" || internal_fail "load fail"
+         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" \
+         || internal_fail "load fail"
          template_generate_main "write" "$@"
       ;;
 
@@ -345,7 +348,8 @@ version"
 
       *)
          # shellcheck source=src/mulle-template-generate.sh
-         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" || internal_fail "load fail"
+         . "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-generate.sh" \
+         || internal_fail "load fail"
 
          template_generate_main write "${cmd}" "$@"
       ;;
@@ -377,9 +381,11 @@ _init()
       then
          if [ -z "`command -v "${executablepath}"`" ]
          then
-            echo "Fatal Error: Could not find mulle-bashfunctions-env in PATH ($PATH) - mulle-bashfunctions not installed ?" >&2
+            echo "Fatal Error: Could not find mulle-bashfunctions-env in \
+PATH ($PATH) - mulle-bashfunctions not installed ?" >&2
          else
-            echo "Fatal Error: Could not find libexec of mulle-bashfunctions-env ($PWD)" >&2
+            echo "Fatal Error: Could not find libexec of \
+mulle-bashfunctions-env ($PWD)" >&2
          fi
          exit 1
       fi
@@ -390,7 +396,7 @@ _init()
 
    if [ -z "${MULLE_TEMPLATE_LIBEXEC_DIR}" ]
    then
-      r_get_libexec_dir "$0" "mulle-sde" "mulle-template-generate.sh"
+      r_get_libexec_dir "$0" "mulle-template" "mulle-template-generate.sh"
       MULLE_TEMPLATE_LIBEXEC_DIR="${RVAL}"
    fi
 
