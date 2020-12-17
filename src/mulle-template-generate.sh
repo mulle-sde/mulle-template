@@ -202,7 +202,7 @@ r_generated_seds()
 #
 get_environment_keys()
 {
-   printenv \
+   env \
       | sed -e 's/^\([^=]*\)=.*/\1/' \
       | LC_ALL=C sort
 }
@@ -619,15 +619,15 @@ do_template_directory()
          ;;
       esac
 
-      #
-      # possibly filter out files that don't match
-      #
       r_filepath_concat "${dst}" "${filename}"
       dst_filename="${RVAL}"
 
       r_template_expand_filename "${filename_sed}" "${dst_filename}"
       expanded_filename="${RVAL}"
 
+      #
+      # possibly filter out files that don't match
+      #
       if [ ! -z "${onlyfile}" ]
       then
          if [ "${expanded_filename}" != "${onlyfile}" -a "${dst_filename}" != "${onlyfile}" ]

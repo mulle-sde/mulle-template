@@ -32,7 +32,7 @@
 [ "${TRACE}" = 'YES' -o "${MULLE_TEMPLATE_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
 
-MULLE_EXECUTABLE_VERSION=0.0.1
+MULLE_EXECUTABLE_VERSION=0.0.2
 MULLE_EXECUTABLE_BASHFUNCTIONS="3.2"
 
 
@@ -321,7 +321,7 @@ version"
       ;;
 
       environment)
-         printenv | LC_ALL=C sort
+         env | LC_ALL=C sort
       ;;
 
       hostname)
