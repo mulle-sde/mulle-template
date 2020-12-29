@@ -2,7 +2,7 @@
 
 🕋 Template generator for text files
 
-![Last version](https://img.shields.io/github/tag/mulle-template/mulle-template.svg)
+![Last version](https://img.shields.io/github/tag/mulle-sde/mulle-template.svg)
 
 Generates a text file from a template file or a folder of files from a folder
 of templates. **mulle-template** is used in mulle-sde to setup programming
