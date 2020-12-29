@@ -72,6 +72,9 @@ Should produce:
 -e 's/\${AUTHOR\(:-[^}]*\)\{0,1\}}/moi/g' -e 's/\${[^}]*:-\([^}]*\)}/\1/g'
 ```
 
+Check the commands usage to see a description of the available options.
+
+
 ### fsed
 
 **fsed** generates `sed` replacement strings from the current environment
@@ -108,30 +111,9 @@ A template file contains regular text that is copied unchanged and keys
 delimited by "<|" and "|>". These are substituted with values found in the
 environment variables.
 
-This `template` file
-
-```
-PATH:     <|PATH|>
-PWD:      <|PWD|>
-LOGNAME:  <|LOGNAME|>
-```
-
-as input for mulle-template
-
-```
-mulle-template generate template -
-```
-
-produces
-
-```
-PATH:     /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:
-PWD:      /home/src/srcS/mulle-template
-LOGNAME:  nat
-```
-
 You have a few options, outside of those mentioned in the **fsed** and **csed**
 commands, to customize the templating operation.
+
 
 #### --without-template-dir
 
