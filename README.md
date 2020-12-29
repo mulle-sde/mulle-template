@@ -5,16 +5,39 @@
 ![Last version](https://img.shields.io/github/tag/mulle-sde/mulle-template.svg)
 
 Generates a text file from a template file or a folder of files from a folder
-of templates. **mulle-template** is used in mulle-sde to setup programming
-projects or for adding source files to them.
+of templates.
+
+
+A template file could look like this:
+
+`template`:
+
+```
+// Author: <|AUTHOR:-unknown|>
+#include <stdio.h>
+
+int  main( int argc, char *argv[])
+{
+   printf( "%s\n", "<|MESSAGE:-Hello World|>");
+   return( 0);
+}
+```
+
+And would be transformed by `mulle-template` using the contents of the
+environment with `MESSAGE="VfL Bochum 1848" mulle-template generate template -`
+into:
 
 
 ```
-mulle-template generate template outputfile
+// Author: unknown
+#include <stdio.h>
+
+int  main( int argc, char *argv[])
+{
+   printf( "%s\n", "VfL Bochum 1848");
+   return( 0);
+}
 ```
-
-
-![](dox/mulle-template-overview.png)
 
 Executable       | Description
 -----------------|--------------------------------
@@ -46,7 +69,7 @@ mulle-template --clean-env -DAUTHOR=moi \
 Should produce:
 
 ```
--e 's/\${AUTHOR}/moi/g'
+-e 's/\${AUTHOR\(:-[^}]*\)\{0,1\}}/moi/g' -e 's/\${[^}]*:-\([^}]*\)}/\1/g'
 ```
 
 ### fsed

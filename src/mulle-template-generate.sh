@@ -176,7 +176,6 @@ r_append_sed_default_expansion()
 }
 
 
-
 r_generated_seds()
 {
    local o="$1"
@@ -237,6 +236,10 @@ get_variable_keys()
 template_is_filekey()
 {
    case "$1" in
+      MULLE*_LIBEXEC_DIR)
+         return 1
+      ;;
+
       *DIRECTORY*|*FILENAME*|*EXTENSION*|*_NAME|*_IDENTIFIER|*_FILE|*_DIR|*_EXT)
          return 0
       ;;
@@ -838,8 +841,16 @@ template_generate_main()
             OPTION_PERMISSIONS='NO'
          ;;
 
+         --boring-environment)
+            OPTION_BORING_ENVIRONMENT='YES'
+         ;;
+
          --no-boring-environment)
             OPTION_BORING_ENVIRONMENT='NO'
+         ;;
+
+         --date-environment)
+            OPTION_DATE_ENVIRONMENT='YES'
          ;;
 
          --no-date-environment)
