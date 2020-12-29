@@ -108,8 +108,9 @@ file are transformed with **csed**. The transformation is done using `sed`
 of course.
 
 A template file contains regular text that is copied unchanged and keys
-delimited by "<|" and "|>". These are substituted with values found in the
-environment variables.
+delimited by "<|" and "|>" (e.g. <|FOO|>). These are substituted with values
+found in the environment variables. For unset variables you can supply a default
+substitution value (e.g. <|FOO:-no foo|>).
 
 You have a few options, outside of those mentioned in the **fsed** and **csed**
 commands, to customize the templating operation.
