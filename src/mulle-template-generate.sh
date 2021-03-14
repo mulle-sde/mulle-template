@@ -364,6 +364,7 @@ r_template_contents_replacement_seds()
    local opener="$1"
    local closer="$2"
    local filter="$3"
+   local dateenv="$4"
 
    r_escaped_sed_pattern "${opener}"
    opener="${RVAL}"
@@ -376,9 +377,8 @@ r_template_contents_replacement_seds()
    r_shell_var_sed "${opener}" "${closer}" "${filter}" "default"
    cmdline="${RVAL}"
 
-   if [ "${OPTION_DATE_ENVIRONMENT}" = 'YES' ]
+   if [ "${dateenv}" != 'NO' ]
    then
-
       r_generated_seds "${opener}" "${closer}"
       r_concat "${cmdline}" "${RVAL}"
       cmdline="${RVAL}"
@@ -953,7 +953,8 @@ template_generate_main()
 
          r_template_contents_replacement_seds "${OPTION_OPENER}" \
                                               "${OPTION_CLOSER}" \
-                                              "${contents_filter}"
+                                              "${contents_filter}" \
+                                              "${OPTION_DATE_ENVIRONMENT}"
          printf "%s\n" "${RVAL}"
       ;;
 
@@ -976,7 +977,8 @@ template_generate_main()
          then
             r_template_contents_replacement_seds "${OPTION_OPENER}" \
                                                  "${OPTION_CLOSER}" \
-                                                 "${contents_filter}"
+                                                 "${contents_filter}" \
+                                                "${OPTION_DATE_ENVIRONMENT}"
             CONTENTS_SED="${RVAL}"
          fi
 
