@@ -558,8 +558,8 @@ copy_and_expand_template()
    then
       rexekutor printf "%s\n" "${text}"
    else
-      log_fluff "${C_RESET_BOLD}\"${templatefile}\" -> \"${outputfile}\""
-
+      log_debug "${C_RESET_BOLD}\"${templatefile}\" -> \"${outputfile}\""
+      log_verbose "Created ${C_RESET_BOLD}${outputfile#${MULLE_USER_PWD}/}"
       redirect_exekutor "${outputfile}" printf "%s\n" "${text}" \
          || fail "failed to write to \"${outputfile}\" (${PWD#${MULLE_USER_PWD}/})"
 
