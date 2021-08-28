@@ -49,16 +49,15 @@ main()
 {
    MULLE_TEMPLATE_FLAGS="$@"
 
-   _options_mini_main "$@"
+   _options_mini_main "$@" && set -x
 
    MULLE_TEMPLATE_EXTENSION_PATH="${PWD}"
    export MULLE_TEMPLATE_EXTENSION_PATH
 
    local directory
 
-   directory="`make_tmp_directory`"
-   directory="${directory:-/tmp/build}"
-
+   r_make_tmp_directory
+   directory="${RVAL:-/tmp/build}"
 
    #
    # Copy to non existing directory

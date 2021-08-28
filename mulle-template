@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#! /bin/sh
 #
 #   Copyright (c) 2018 Nat! - Mulle kybernetiK
 #   All rights reserved.
@@ -31,6 +31,66 @@
 #
 [ "${TRACE}" = 'YES' -o "${MULLE_TEMPLATE_TRACE}" = 'YES' ] && set -x && : "$0" "$@"
 
+####
+#
+# Prelude to be placed at top of each script. Rerun this script either in
+# bash or zsh, if not already running in either (which can happen!)
+# Allows script to run on systems that either have bash (linux) or
+# zsh (macOS) only by default.
+
+if [ "$1" != --no-auto-shell ]
+then
+   if [ -z "${BASH_VERSION}" -a -z "${ZSH_VERSION}" ]
+   then
+      exe_shell="`command -v "bash" `"
+      exe_shell="${exe_shell:-`command -v "zsh" `}"
+
+      script="$0"
+
+      #
+      # Quote incoming arguments for shell expansion
+      #
+      args=""
+      for arg in "$@"
+      do
+         # True bourne sh doesn't know ${a//b/c} and <<<
+         case "${arg}" in
+            *\'*)
+               # Use cat instead of echo to avoid possible echo -n
+               # problems. Escape single quotes in string.
+               arg="`cat <<EOF | sed -e s/\'/\'\\\"\'\\\"\'/g
+${arg}
+EOF
+`"
+            ;;
+         esac
+         if [ -z "${args}" ]
+         then
+            args="'${arg}'"
+         else
+            args="${args} '${arg}'"
+         fi
+      done
+
+      #
+      # bash/zsh will use arg after -c <arg> as $0, convenient!
+      #
+
+      exec "${exe_shell:-bash}" -c ". ${script} --no-auto-shell ${args}" "${script}"
+   fi
+   if [ ! -z "${BASH_VERSION}" ]
+   then
+      set +o posix
+   fi
+else
+   shift    # get rid of --no-auto-shell
+fi
+
+
+#
+# Main script to follow, runs now either in zsh or bash
+#
+####
 
 MULLE_EXECUTABLE_VERSION=0.0.4
 MULLE_EXECUTABLE_BASHFUNCTIONS="3.2"
@@ -164,7 +224,7 @@ set_custom_define()
 
    eval "export ${key}='${value}'"
 
-   log_fluff "Set environment variable \"${key}\" to \"${!key}\""
+   log_fluff "Set environment variable \"${key}\" to '${value}'"
 }
 
 
@@ -176,14 +236,14 @@ set_custom_environment()
 
    local i
 
-   set -o noglob; IFS=$'\n'
+   shell_disable_glob; IFS=$'\n'
    for i in ${defines}
    do
-      set +o noglob; IFS="${DEFAULT_IFS}"
+      shell_enable_glob; IFS="${DEFAULT_IFS}"
 
       set_custom_define "${i#-D}"
    done
-   set +o noglob; IFS="${DEFAULT_IFS}"
+   shell_enable_glob; IFS="${DEFAULT_IFS}"
 }
 
 
@@ -272,7 +332,7 @@ main()
       shift
    done
 
-   options_setup_trace "${MULLE_TRACE}"
+   options_setup_trace "${MULLE_TRACE}" && set -x
 
 
    local cmd
@@ -365,14 +425,12 @@ version"
 ###
 _init()
 {
-   #
-   # minimal setup exit
-   #
-   if [ "$1" = "version" ]
-   then
-      printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
-      exit 0
-   fi
+   # mingw stuff
+   case "$PATH" in
+      '\\'*)
+         PATH="${PATH//\\/\/}"
+      ;;
+   esac
 
    if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
    then
@@ -385,7 +443,7 @@ _init()
 PATH ($PATH) - mulle-bashfunctions not installed ?" >&2
          else
             echo "Fatal Error: Could not find libexec of \
-mulle-bashfunctions-env ($PWD)" >&2
+mulle-bashfunctions-env (${PWD#${MULLE_USER_PWD}/})" >&2
          fi
          exit 1
       fi
@@ -396,25 +454,54 @@ mulle-bashfunctions-env ($PWD)" >&2
 
    if [ -z "${MULLE_TEMPLATE_LIBEXEC_DIR}" ]
    then
-      r_get_libexec_dir "$0" "mulle-template" "mulle-template-generate.sh"
+      r_get_libexec_dir "${MULLE_EXECUTABLE}" "mulle-template" "mulle-template-generate.sh"
       MULLE_TEMPLATE_LIBEXEC_DIR="${RVAL}"
    fi
 
    #
-   # minimal setup exit
+   # commands with minimal trap setup
    #
-   case "$1" in
-      "libexec-dir"|"library-path")
-         printf "%s\n" "${MULLE_TEMPLATE_LIBEXEC_DIR}"
-         exit 0
-      ;;
-   esac
+   if [ $# -eq 1 ]
+   then
+      case "${1}" in
+         libexec-dir|library-path)
+            printf "%s\n" "${MULLE_TEMPLATE_LIBEXEC_DIR}"
+            exit 0
+         ;;
+
+         version)
+            printf "%s\n" "${MULLE_EXECUTABLE_VERSION}"
+            exit 0
+         ;;
+      esac
+   fi
 
    #  set -e # more pain then gain in the end
    #  set -u # doesn't work with my style
 
-   set -o pipefail
-   shopt -s extglob
+   shell_enable_pipefail
+   shell_enable_extglob
+
+   case "$1" in
+      --clean-env)
+         shift
+
+         if [ "${TRACE}" = 'YES' -o "${MULLE_TEMPLATE_TRACE}" = 'YES' ]
+         then
+            exec env -i \
+                  "TRACE=YES" \
+                  "MULLE_BASHFUNCTIONS_LIBEXEC_DIR=${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" \
+                  "MULLE_TEMPLATE_LIBEXEC_DIR=${MULLE_TEMPLATE_LIBEXEC_DIR}" \
+                   "$0" "$@"
+         fi
+         exec env -i \
+                  "MULLE_BASHFUNCTIONS_LIBEXEC_DIR=${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" \
+                  "MULLE_TEMPLATE_LIBEXEC_DIR=${MULLE_TEMPLATE_LIBEXEC_DIR}" \
+                  "$0" "$@"
+      ;;
+   esac
+
+   call_main "${MULLE_TEMPLATE_FLAGS}" "$@"
 }
 ###
 ### INIT
@@ -424,25 +511,8 @@ mulle-bashfunctions-env ($PWD)" >&2
 #
 # reexec with clean environment if very first argument
 #
+MULLE_EXECUTABLE="${MULLE_EXECUTABLE:-${BASH_SOURCE[0]:-${(%):-%x}}}"
+
 _init "$@" # needs params
 
-case "$1" in
-   --clean-env)
-      shift
 
-      if [ "${TRACE}" = 'YES' -o "${MULLE_TEMPLATE_TRACE}" = 'YES' ]
-      then
-         exec env -i \
-               "TRACE=YES" \
-               "MULLE_BASHFUNCTIONS_LIBEXEC_DIR=${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" \
-               "MULLE_TEMPLATE_LIBEXEC_DIR=${MULLE_TEMPLATE_LIBEXEC_DIR}" \
-                "$0" "$@"
-      fi
-      exec env -i \
-               "MULLE_BASHFUNCTIONS_LIBEXEC_DIR=${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" \
-               "MULLE_TEMPLATE_LIBEXEC_DIR=${MULLE_TEMPLATE_LIBEXEC_DIR}" \
-               "$0" "$@"
-   ;;
-esac
-
-call_main "${MULLE_TEMPLATE_FLAGS}" "$@"

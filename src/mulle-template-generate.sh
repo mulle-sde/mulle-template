@@ -210,7 +210,7 @@ get_environment_keys()
 print_csv_pascal_strings()
 {
    (
-      IFS=$'\n'; set -f
+      IFS=$'\n'; shell_disable_glob
       while read -r line
       do
          printf "%d;%s\\n" "${#line}" "${line}"
@@ -299,15 +299,14 @@ r_shell_var_sed()
    local variablekeys
    local key
    local value
-   local cmdline
    local replacement
 
    variablekeys="`get_variable_keys`"
 
-   IFS=$'\n'; set -f
+   IFS=$'\n'; shell_disable_glob
    for key in ${variablekeys}
    do
-      IFS=${DEFAULT_IFS}; set +f
+      IFS=${DEFAULT_IFS}; shell_enable_glob
 
       if [ ! -z "${pattern_function}" ] && ! ${pattern_function} "${key}"
       then
@@ -322,16 +321,23 @@ r_shell_var_sed()
          continue
       fi
 
+      if [ ! -z "${ZSH_VERSION}" ]
+      then
+         value="${(P)key}"
+      else
+         value="${!key}"
+      fi
+
       if [ "${4}" = "default" ]
       then
-         r_append_sed_default_var_expansion "${cmdline}" "${o}" "${c}" "${key}" "${!key}"
+         r_append_sed_default_var_expansion "${cmdline}" "${o}" "${c}" "${key}" "${value}"
       else
-         r_append_sed_var_expansion "${cmdline}" "${o}" "${c}" "${key}" "${!key}"
+         r_append_sed_var_expansion "${cmdline}" "${o}" "${c}" "${key}" "${value}"
       fi
 
       cmdline="${RVAL}"
    done
-   IFS=${DEFAULT_IFS}; set +f
+   IFS=${DEFAULT_IFS}; shell_enable_glob
 
    RVAL="${cmdline}"
 }
@@ -372,7 +378,6 @@ r_template_contents_replacement_seds()
    closer="${RVAL}"
 
    local cmdline
-   local filter
 
    r_shell_var_sed "${opener}" "${closer}" "${filter}" "default"
    cmdline="${RVAL}"
@@ -606,10 +611,10 @@ do_template_directory()
 
    # too funny, IFS="" is wrong IFS="\n" is also wrong. Only hardcoded LF works
 
-   IFS=$'\n'; set -f
+   IFS=$'\n'; shell_disable_glob
    for filename in `( cd "${templatedir}" ; find -L . -type f -print )`
    do
-      IFS="${DEFAULT_IFS}"; set +f
+      IFS="${DEFAULT_IFS}"; shell_enable_glob
 
       filename="${filename#./}"
 
@@ -654,7 +659,7 @@ do_template_directory()
 
       IFS=$'\n'
    done
-   IFS="${DEFAULT_IFS}"; set +f
+   IFS="${DEFAULT_IFS}"; shell_enable_glob
 }
 
 
@@ -937,7 +942,7 @@ template_generate_main()
 
    if [ "${OPTION_EMBEDDED}" = 'NO' ]
    then
-      options_setup_trace "${MULLE_TRACE}"
+      options_setup_trace "${MULLE_TRACE}" && set -x
    fi
 
    local contents_filter
