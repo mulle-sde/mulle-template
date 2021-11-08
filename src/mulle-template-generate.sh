@@ -306,7 +306,7 @@ r_shell_var_sed()
    IFS=$'\n'; shell_disable_glob
    for key in ${variablekeys}
    do
-      IFS=${DEFAULT_IFS}; shell_enable_glob
+      IFS="${DEFAULT_IFS}"; shell_enable_glob
 
       if [ ! -z "${pattern_function}" ] && ! ${pattern_function} "${key}"
       then
@@ -337,7 +337,7 @@ r_shell_var_sed()
 
       cmdline="${RVAL}"
    done
-   IFS=${DEFAULT_IFS}; shell_enable_glob
+   IFS="${DEFAULT_IFS}"; shell_enable_glob
 
    RVAL="${cmdline}"
 }
@@ -983,7 +983,7 @@ template_generate_main()
             r_template_contents_replacement_seds "${OPTION_OPENER}" \
                                                  "${OPTION_CLOSER}" \
                                                  "${contents_filter}" \
-                                                "${OPTION_DATE_ENVIRONMENT}"
+                                                 "${OPTION_DATE_ENVIRONMENT}"
             CONTENTS_SED="${RVAL}"
          fi
 
