@@ -321,6 +321,13 @@ r_shell_var_sed()
          continue
       fi
 
+      # mingw has some weird keys we can't deal with
+      case "${key}" in 
+         *\!*|*\(*\)*)
+            continue 
+         ;;
+      esac
+      
       if [ ! -z "${ZSH_VERSION}" ]
       then
          value="${(P)key}"
