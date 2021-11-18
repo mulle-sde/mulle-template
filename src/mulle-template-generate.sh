@@ -501,6 +501,143 @@ r_template_expand_filename()
 }
 
 
+r_comment_for_templatefile()
+{
+   log_entry "r_comment_for_templatefile"
+
+   local templatefile="$1"
+   local outputfile="$2"
+
+   local commentstart='DEFAULT'
+   local commentmiddle='DEFAULT'
+   local commentend='DEFAULT'
+
+   if [ "${outputfile}" = "-" ]
+   then
+      outputfile=""
+   fi
+   outputfile="${outputfile:-${templatefile}}"
+
+   r_basename "${outputfile}"
+   r_lowercase "${RVAL}"
+
+   case "${RVAL}" in
+      *.c|*.h|*.inc|*.m|*.aam|*.js|*.cs|*.css|*.go|*.cpp|*.hpp)
+         commentstart="/*"
+         commentmiddle=" * "
+         commentend=" */"
+      ;;
+
+      *.f|*.for|*.f90)
+         commentstart=""
+         commentmiddle="! "
+         commentend=""
+      ;;
+
+      *.s)
+         commentstart=""
+         commentmiddle="; "
+         commentend=""
+      ;;
+
+      *.md|*.html)
+         commentstart="<!--"
+         commentmiddle=""
+         commentend="-->"
+      ;;
+
+      *.bas|*.bat)
+         commentstart=""
+         commentmiddle="REM "
+         commentend=""
+      ;;
+
+      *.pl|*.py|*.rb|*.sh|*.cmake|makefile*|cmakelists.txt)
+         commentstart=""
+         commentmiddle="# "
+         commentend=""
+      ;;
+
+      *.sql|*.hs|*.hls)
+         commentstart=""
+         commentmiddle="-- "
+         commentend=""
+      ;;
+
+      *.zig)
+         commentstart=""
+         commentmiddle="// "
+         commentend=""
+      ;;
+   esac
+
+   RVAL=
+   if [ "${OPTION_COMMENT_START}" = 'DEFAULT' ]
+   then
+      [ "${commentstart}" = 'DEFAULT' ] && return 1
+   else
+      commentstart="${OPTION_COMMENT_START}"
+   fi
+
+   if [ "${OPTION_COMMENT_MIDDLE}" = 'DEFAULT' ]
+   then
+      [ "${commentmiddle}" = 'DEFAULT' ] && return 1
+   else
+      commentmiddle="${OPTION_COMMENT_MIDDLE}"
+   fi
+
+   if [ "${OPTION_COMMENT_END}" = 'DEFAULT' ]
+   then
+      [ "${commentend}" = 'DEFAULT' ] && return 1
+   else
+      commentend="${OPTION_COMMENT_END}"
+   fi
+
+   log_verbose "Appending comment to template file \"${templatefile}\""
+
+   local result
+
+   result=$'\n'
+
+   if [ ! -z "${commentstart}" ]
+   then
+      r_add_line "${result}" "${commentstart}"
+      result="${RVAL}"
+   fi
+
+   local line
+   local expanded
+   local comment_sed
+
+   r_basename "${templatefile}"
+   TEMPLATE_FILE="${RVAL}"; export TEMPLATE_FILE
+
+   r_template_contents_replacement_seds "<|" \
+                                        "|>" \
+                                        "template_is_interesting_key"
+   comment_sed="${RVAL}"
+
+   expanded="`LC_ALL=C eval_rexekutor "'${SED:-sed}'" \
+                                          "${comment_sed}" \
+                                          <<< "${OPTION_COMMENT//\\\\n/$'\n'}" `"
+
+   IFS=$'\n'
+   for line in ${expanded}
+   do
+      r_add_line "${result}" "${commentmiddle}${line}"
+      result="${RVAL}"
+   done
+   IFS="${DEFAULT_IFS}"
+
+   if [ ! -z "${commentend}" ]
+   then
+      r_add_line "${result}" "${commentend}"
+      result="${RVAL}"
+   fi
+
+   RVAL="${result}"
+}
+
 #
 # We know here that "templatefile" is a file and we know "outputfile" is a
 # file. And the filename expansion is through.
@@ -563,6 +700,15 @@ copy_and_expand_template()
                                           <<< "${text}" `"
       then
          fail "Given template sed expression is broken: ${template_sed}"
+      fi
+   fi
+
+   if [ ! -z "${OPTION_COMMENT}" ]
+   then
+      if r_comment_for_templatefile "${templatefile}" "${outputfile}"
+      then
+         r_add_line "${text}" "${RVAL}"
+         text="${RVAL}"
       fi
    fi
 
@@ -778,7 +924,6 @@ template_generate_main()
       ;;
    esac
 
-
    local OPTION_FILE
    local OPTION_PERMISSIONS='NO'
    local OPTION_OPENER="<|"
@@ -789,6 +934,10 @@ template_generate_main()
    local OPTION_WITH_TEMPLATE_DIR='YES'
    local OPTION_BORING_ENVIRONMENT='NO'
    local OPTION_DATE_ENVIRONMENT='YES'
+   local OPTION_COMMENT=
+   local OPTION_COMMENT_START='DEFAULT'
+   local OPTION_COMMENT_MIDDLE='DEFAULT'
+   local OPTION_COMMENT_END='DEFAULT'
 
    local template_callback
 
@@ -796,7 +945,6 @@ template_generate_main()
 
    while [ $# -ne 0 ]
    do
-
       if [ "${OPTION_EMBEDDED}" = 'NO' ]
       then
          if options_technical_flags "$1"
@@ -816,6 +964,34 @@ template_generate_main()
             shift
 
             template_callback="$1"
+         ;;
+
+         --comment-start)
+            shift
+            [ $# -eq 0 ] && template_generate_write_usage
+
+            OPTION_COMMENT_START="$1"
+         ;;
+
+         --comment-middle)
+            shift
+            [ $# -eq 0 ] && template_generate_write_usage
+
+            OPTION_COMMENT_MIDDLE="$1"
+         ;;
+
+         --comment-end)
+            shift
+            [ $# -eq 0 ] && template_generate_write_usage
+
+            OPTION_COMMENT_END="$1"
+         ;;
+
+         --comment)
+            shift
+            [ $# -eq 0 ] && template_generate_write_usage
+
+            OPTION_COMMENT="$1"
          ;;
 
          --csed|--contents-sed)
@@ -998,7 +1174,7 @@ template_generate_main()
                                 "${CONTENTS_SED}" \
                                 "$@" \
                                 "${OPTION_FILE}"
-     ;;
+      ;;
 
       *)
          internal_fail "Unknown command \"$1\""

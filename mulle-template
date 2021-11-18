@@ -150,16 +150,10 @@ Usage:
    templates.
 
    If a key is missing you can supply a default replacement text with
-   <|KEY:-default|>. So here is a small example file \"file.template\":
+   <|KEY:-default|>. A small example:
 
-      <|DATE|>
-      Hello Mr. <|NAME:-Unknown|>
-      Yours
-         <|AUTHOR|>
-
-   This command will print the expanded contents of file.template:
-
-   ${MULLE_USAGE_NAME} --clean-env -DAUTHOR="moi" generate file.template -
+   printf "<|DATE|>\\nHello <|NAME:-Unknown|>\\nYours\\n\\t<|AUTHOR|>\\n" > a
+   ${MULLE_USAGE_NAME} --clean-env -DAUTHOR="moi" generate a -
 
    See  \`${MULLE_USAGE_NAME} generate help\` or more information.
 
@@ -423,6 +417,12 @@ version"
 ###
 ### INIT
 ###
+_fatal()
+{
+   echo "$0 fatal error: $*" >&2
+   exit 1
+}
+
 _init()
 {
    # mingw stuff
@@ -450,8 +450,7 @@ mulle-bashfunctions-env (${PWD#${MULLE_USER_PWD}/})" >&2
    fi
 
    . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" "file" || \
-      fail "failed to load bashfunctions from ${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}"
-
+      _fatal "failed to load bashfunctions from ${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}"
    if [ -z "${MULLE_TEMPLATE_LIBEXEC_DIR}" ]
    then
       r_get_libexec_dir "${MULLE_EXECUTABLE}" "mulle-template" "mulle-template-generate.sh"
