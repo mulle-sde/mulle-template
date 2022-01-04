@@ -35,7 +35,7 @@ MULLE_TEMPLATE_GENEREATE_SH="included"
 # TEMPLATE
 #
 
-template_generate_csed_usage()
+template::generate::csed_usage()
 {
    [ "$#" -ne 0 ] && log_error "$*"
 
@@ -57,7 +57,7 @@ EOF
 }
 
 
-template_generate_fsed_usage()
+template::generate::fsed_usage()
 {
    [ "$#" -ne 0 ] && log_error "$1"
 
@@ -76,7 +76,7 @@ EOF
 }
 
 
-template_print_write_usage()
+template::generate::print_usage()
 {
    local show_all="${1:-NO}"
 
@@ -107,7 +107,7 @@ template_print_write_usage()
 }
 
 
-template_generate_write_usage()
+template::generate::usage()
 {
    [ "$#" -ne 0 ] && log_error "$1"
 
@@ -121,7 +121,7 @@ Usage:
 
 Options:
 EOF
-   template_print_write_usage "${MULLE_FLAG_LOG_VERBOSE}" >&2
+   template::generate::print_usage "${MULLE_FLAG_LOG_VERBOSE}" >&2
 
    cat <<EOF >&2
       (use ${MULLE_USAGE_NAME} -v generate help to show more options)
@@ -131,7 +131,7 @@ EOF
 }
 
 
-r_append_sed_default_var_expansion()
+template::generate::r_append_sed_default_var_expansion()
 {
    local cmdline="$1"
    local o="$2"
@@ -151,7 +151,7 @@ r_append_sed_default_var_expansion()
 
 
 
-r_append_sed_var_expansion()
+template::generate::r_append_sed_var_expansion()
 {
    local cmdline="$1"
    local o="$2"
@@ -166,7 +166,7 @@ r_append_sed_var_expansion()
 
 
 # expand key:-default to default
-r_append_sed_default_expansion()
+template::generate::r_append_sed_default_expansion()
 {
    local cmdline="$1"
    local o="$2"
@@ -176,7 +176,7 @@ r_append_sed_default_expansion()
 }
 
 
-r_generated_seds()
+template::generate::r_generated_seds()
 {
    local o="$1"
    local c="$2"
@@ -189,9 +189,9 @@ r_generated_seds()
    nowtime="`date "+%H:%M:%S"`"
    nowyear="`date "+%Y"`"
 
-   r_append_sed_var_expansion ""        "${o}" "${c}" 'DATE' "${nowdate}"
-   r_append_sed_var_expansion "${RVAL}" "${o}" "${c}" 'TIME' "${nowtime}"
-   r_append_sed_var_expansion "${RVAL}" "${o}" "${c}" 'YEAR' "${nowyear}"
+   template::generate::r_append_sed_var_expansion ""        "${o}" "${c}" 'DATE' "${nowdate}"
+   template::generate::r_append_sed_var_expansion "${RVAL}" "${o}" "${c}" 'TIME' "${nowtime}"
+   template::generate::r_append_sed_var_expansion "${RVAL}" "${o}" "${c}" 'YEAR' "${nowyear}"
 }
 
 #
@@ -199,7 +199,7 @@ r_generated_seds()
 # is only important for filename expansion, where we don't have <||> guards.
 # With filenames ONE_NAME should be matched after ONE_NAME_NO_EXT
 #
-get_environment_keys()
+template::generate::get_environment_keys()
 {
    env \
       | sed -e 's/^\([^=]*\)=.*/\1/' \
@@ -207,7 +207,7 @@ get_environment_keys()
 }
 
 
-print_csv_pascal_strings()
+template::generate::print_csv_pascal_strings()
 {
    (
       IFS=$'\n'; shell_disable_glob
@@ -219,21 +219,21 @@ print_csv_pascal_strings()
 }
 
 
-print_csv_pascal_keys_sorted_by_reverse_length()
+template::generate::print_csv_pascal_keys_sorted_by_reverse_length()
 {
    sort -t';' -k 1,1gr -k 2,2 | sed 's/^[^;]*;//'
 }
 
 
-get_variable_keys()
+template::generate::get_variable_keys()
 {
-   get_environment_keys \
-      | print_csv_pascal_strings \
-      | print_csv_pascal_keys_sorted_by_reverse_length
+   template::generate::get_environment_keys \
+      | template::generate::print_csv_pascal_strings \
+      | template::generate::print_csv_pascal_keys_sorted_by_reverse_length
 }
 
 
-template_is_filekey()
+template::generate::is_filekey()
 {
    case "$1" in
       MULLE*_LIBEXEC_DIR)
@@ -249,7 +249,7 @@ template_is_filekey()
 }
 
 
-template_is_interesting_key()
+template::generate::is_interesting_key()
 {
    case "$1" in
       # bash keys
@@ -285,14 +285,14 @@ template_is_interesting_key()
 #
 # make <||> substitutions for all environment variables
 #
-r_shell_var_sed()
+template::generate::r_shell_var_sed()
 {
    local o="$1"
    local c="$2"
    local pattern_function="$3"
    local mode="$4"
 
-   log_entry "r_shell_var_sed" "$@"
+   log_entry "template::generate::r_shell_var_sed" "$@"
 
    local cmdline
 
@@ -301,7 +301,7 @@ r_shell_var_sed()
    local value
    local replacement
 
-   variablekeys="`get_variable_keys`"
+   variablekeys="`template::generate::get_variable_keys`"
 
    IFS=$'\n'; shell_disable_glob
    for key in ${variablekeys}
@@ -322,12 +322,12 @@ r_shell_var_sed()
       fi
 
       # mingw has some weird keys we can't deal with
-      case "${key}" in 
+      case "${key}" in
          *\!*|*\(*\)*)
-            continue 
+            continue
          ;;
       esac
-      
+
       if [ ! -z "${ZSH_VERSION}" ]
       then
          value="${(P)key}"
@@ -337,9 +337,9 @@ r_shell_var_sed()
 
       if [ "${4}" = "default" ]
       then
-         r_append_sed_default_var_expansion "${cmdline}" "${o}" "${c}" "${key}" "${value}"
+         template::generate::r_append_sed_default_var_expansion "${cmdline}" "${o}" "${c}" "${key}" "${value}"
       else
-         r_append_sed_var_expansion "${cmdline}" "${o}" "${c}" "${key}" "${value}"
+         template::generate::r_append_sed_var_expansion "${cmdline}" "${o}" "${c}" "${key}" "${value}"
       fi
 
       cmdline="${RVAL}"
@@ -350,9 +350,9 @@ r_shell_var_sed()
 }
 
 
-r_template_filename_replacement_seds()
+template::generate::r_filename_replacement_seds()
 {
-   log_entry "r_template_filename_replacement_seds" "$@"
+   log_entry "template::generate::r_filename_replacement_seds" "$@"
 
    local opener="$1"
    local closer="$2"
@@ -362,17 +362,17 @@ r_template_filename_replacement_seds()
    r_escaped_sed_pattern "${closer}"
    closer="${RVAL}"
 
-   r_shell_var_sed "${opener}" \
+   template::generate::r_shell_var_sed "${opener}" \
                    "${closer}" \
-                   template_is_filekey
+                   template::generate::is_filekey
 
    log_debug "${RVAL}"
 }
 
 
-r_template_contents_replacement_seds()
+template::generate::r_content_replacement_seds()
 {
-   log_entry "r_template_contents_replacement_seds" "$@"
+   log_entry "template::generate::r_content_replacement_seds" "$@"
 
    local opener="$1"
    local closer="$2"
@@ -386,12 +386,12 @@ r_template_contents_replacement_seds()
 
    local cmdline
 
-   r_shell_var_sed "${opener}" "${closer}" "${filter}" "default"
+   template::generate::r_shell_var_sed "${opener}" "${closer}" "${filter}" "default"
    cmdline="${RVAL}"
 
    if [ "${dateenv}" != 'NO' ]
    then
-      r_generated_seds "${opener}" "${closer}"
+      template::generate::r_generated_seds "${opener}" "${closer}"
       r_concat "${cmdline}" "${RVAL}"
       cmdline="${RVAL}"
    fi
@@ -400,15 +400,15 @@ r_template_contents_replacement_seds()
    # finally append a set that cleans up all values that haven't been
    # expanded of the form <|key:-default|>
    #
-   r_append_sed_default_expansion "${cmdline}" "${opener}" "${closer}"
+   template::generate::r_append_sed_default_expansion "${cmdline}" "${opener}" "${closer}"
 
    log_debug "${RVAL}"
 }
 
 
-_cat_template_file()
+template::generate::_cat_template_file()
 {
-   log_entry "_cat_template_file" "$@"
+   log_entry "template::generate::_cat_template_file" "$@"
 
    local line
 
@@ -439,15 +439,15 @@ _cat_template_file()
 }
 
 
-cat_template_file()
+template::generate::cat_template_file()
 {
-   log_entry "cat_template_file" "$@"
+   log_entry "template::generate::cat_template_file" "$@"
 
    local templatefile="$1"
 
    if [ "${templatefile}" = "-" ]
    then
-      _cat_template_file
+      template::generate::_cat_template_file
       return $?
    fi
 
@@ -470,13 +470,13 @@ cat_template_file()
       ;;
    esac
 
-   _cat_template_file < "${templatefile}"
+   template::generate::_cat_template_file < "${templatefile}"
 }
 
 
-r_template_expand_filename()
+template::generate::r_expand_filename()
 {
-   log_entry "r_template_expand_filename" "..." "$2"
+   log_entry "template::generate::r_expand_filename" "..." "$2"
 
    local filename_sed="$1"
    local filename="$2"
@@ -501,9 +501,9 @@ r_template_expand_filename()
 }
 
 
-r_comment_for_templatefile()
+template::generate::r_comment_for_templatefile()
 {
-   log_entry "r_comment_for_templatefile"
+   log_entry "template::generate::r_comment_for_templatefile"
 
    local templatefile="$1"
    local outputfile="$2"
@@ -612,9 +612,9 @@ r_comment_for_templatefile()
    r_basename "${templatefile}"
    TEMPLATE_FILE="${RVAL}"; export TEMPLATE_FILE
 
-   r_template_contents_replacement_seds "<|" \
+   template::generate::r_content_replacement_seds "<|" \
                                         "|>" \
-                                        "template_is_interesting_key"
+                                        "template::generate::is_interesting_key"
    comment_sed="${RVAL}"
 
    expanded="`LC_ALL=C eval_rexekutor "'${SED:-sed}'" \
@@ -642,9 +642,9 @@ r_comment_for_templatefile()
 # We know here that "templatefile" is a file and we know "outputfile" is a
 # file. And the filename expansion is through.
 #
-copy_and_expand_template()
+template::generate::copy_and_expand()
 {
-   log_entry "copy_and_expand_template" "..." "$2" "$3"
+   log_entry "template::generate::copy_and_expand" "..." "$2" "$3"
 
    local template_sed="$1"
    local templatefile="$2"
@@ -652,6 +652,8 @@ copy_and_expand_template()
 
    [ -z "${templatefile}" ] && internal_fail "templatefile is empty"
    [ -z "${outputfile}" ]   && internal_fail "outputfile is empty"
+
+   local permissions
 
    if [ "${outputfile}" != '-' ]
    then
@@ -661,28 +663,34 @@ copy_and_expand_template()
          return 1
       fi
 
-      if [ "${OPTION_OVERWRITE}" = 'NO' ] && [ -f "${outputfile}" ]
+      if [ -f "${outputfile}" ]
       then
-         log_fluff "\"${templatefile}\" !! \"${outputfile}\" (exists)"
-         return 4
-      fi
-
-      #
-      # Directory
-      #
-
-      r_mkdir_parent_if_missing "${outputfile}"
-
-      #
-      # Permissions 1
-      #
-      if [ "${OPTION_PERMISSIONS}" = 'YES' ]
-      then
-         if [ -f "${outputfile}" ]
+         if [ "${OPTION_OVERWRITE}" = 'NO' ]
          then
+            log_fluff "\"${templatefile}\" !! \"${outputfile}\" (exists)"
+            return 4
+         fi
+
+         if [ ! -w "${outputfile}" ]
+         then
+            permissions="`lso "${outputfile}"`"
             exekutor chmod ug+w "${outputfile}" || exit 1
          fi
+      else
+         #
+         # Directory
+         #
+
+         r_mkdir_parent_if_missing "${outputfile}"
       fi
+   fi
+
+   #
+   # Permissions 1
+   #
+   if [ "${OPTION_PERMISSIONS}" = 'YES' ]
+   then
+      permissions="`lso "${templatefile}"`"
    fi
 
    #
@@ -692,7 +700,7 @@ copy_and_expand_template()
 
    local text
 
-   text="`cat_template_file "${templatefile}"`" || exit 1
+   text="`template::generate::cat_template_file "${templatefile}"`" || exit 1
    if [ ! -z "${template_sed}" ]
    then
       if ! text="`LC_ALL=C eval_rexekutor "'${SED:-sed}'" \
@@ -705,7 +713,7 @@ copy_and_expand_template()
 
    if [ ! -z "${OPTION_COMMENT}" ]
    then
-      if r_comment_for_templatefile "${templatefile}" "${outputfile}"
+      if template::generate::r_comment_for_templatefile "${templatefile}" "${outputfile}"
       then
          r_add_line "${text}" "${RVAL}"
          text="${RVAL}"
@@ -717,27 +725,25 @@ copy_and_expand_template()
       rexekutor printf "%s\n" "${text}"
    else
       log_debug "${C_RESET_BOLD}\"${templatefile}\" -> \"${outputfile}\""
-      log_verbose "Created ${C_RESET_BOLD}${outputfile#${MULLE_USER_PWD}/}"
       redirect_exekutor "${outputfile}" printf "%s\n" "${text}" \
          || fail "failed to write to \"${outputfile}\" (${PWD#${MULLE_USER_PWD}/})"
+
+      log_verbose "Created ${C_RESET_BOLD}${outputfile#${MULLE_USER_PWD}/}"
 
       #
       # Permissions 2
       #
-      if [ "${OPTION_PERMISSIONS}" = 'YES' ]
+      if [ ! -z "${permissions}" ]
       then
-         local permissions
-
-         permissions="`lso "${templatefile}"`"
          exekutor chmod "${permissions}" "${outputfile}"
       fi
    fi
 }
 
 
-do_template_directory()
+template::generate::do_directory()
 {
-   log_entry "do_template_directory" "..." "..." "$3" "$4" "$5"
+   log_entry "template::generate::do_directory" "..." "..." "$3" "$4" "$5"
 
    local filename_sed="$1"
    local template_sed="$2"
@@ -783,7 +789,7 @@ do_template_directory()
       r_filepath_concat "${dst}" "${filename}"
       dst_filename="${RVAL}"
 
-      r_template_expand_filename "${filename_sed}" "${dst_filename}"
+      template::generate::r_expand_filename "${filename_sed}" "${dst_filename}"
       expanded_filename="${RVAL}"
 
       #
@@ -802,7 +808,7 @@ do_template_directory()
       src_filename="${RVAL}"
 
       # assume we can for as much as we want
-      copy_and_expand_template "${template_sed}" \
+      template::generate::copy_and_expand "${template_sed}" \
                                "${src_filename}" \
                                "${expanded_filename}"
       if [ $? -eq 1 ]
@@ -816,9 +822,9 @@ do_template_directory()
 }
 
 
-do_template_file()
+template::generate::do_file()
 {
-   log_entry "do_template_file" "..." "..." "$3" "$4" "$5"
+   log_entry "template::generate::do_file" "..." "..." "$3" "$4" "$5"
 
    local filename_sed="$1"
    local template_sed="$2"
@@ -843,7 +849,7 @@ do_template_file()
    then
       r_basename "${templatefile}"
       r_filepath_concat "${directory}" "${RVAL}"
-      r_template_expand_filename "${filename_sed}" "${RVAL}"
+      template::generate::r_expand_filename "${filename_sed}" "${RVAL}"
       expanded_filename="${RVAL}"
    else
       expanded_filename="${directory}"
@@ -856,7 +862,7 @@ do_template_file()
    fi
 
    # assume we can for as much as we want
-   copy_and_expand_template "${template_sed}" \
+   template::generate::copy_and_expand "${template_sed}" \
                             "${templatefile}" \
                             "${expanded_filename}"
    if [ $? -eq 1 ]
@@ -866,9 +872,9 @@ do_template_file()
 }
 
 
-default_template_setup()
+template::generate::default_setup()
 {
-   log_entry "default_template_setup" "..." "..." "$3" "$4" "$5"
+   log_entry "template::generate::default_setup" "..." "..." "$3" "$4" "$5"
 
    local filename_sed="$1"
    local template_sed="$2"
@@ -876,19 +882,19 @@ default_template_setup()
    local dst="$4"
    local onlyfile="$5"
 
-   [ $# -lt 3 -o $# -gt 5 ] && template_generate_write_usage "Wrong number of arguments"
-   [ -z "${src}" ] && template_generate_write_usage "No template specified"
+   [ $# -lt 3 -o $# -gt 5 ] && template::generate::usage "Wrong number of arguments"
+   [ -z "${src}" ] && template::generate::usage "No template specified"
 
    if [ "${src}" != "-" ]
    then
       if [ -d "${src}" ]
       then
-         do_template_directory "${filename_sed}" "${template_sed}" "${src}" "${dst}" "${onlyfile}"
+         template::generate::do_directory "${filename_sed}" "${template_sed}" "${src}" "${dst}" "${onlyfile}"
          return $?
       fi
    fi
 
-   do_template_file "${filename_sed}" "${template_sed}" "${src}" "${dst}"  "${onlyfile}"
+   template::generate::do_file "${filename_sed}" "${template_sed}" "${src}" "${dst}"  "${onlyfile}"
    if [ $? -eq 1 ]
    then
       return 1
@@ -897,9 +903,9 @@ default_template_setup()
 }
 
 
-template_generate_main()
+template::generate::main()
 {
-   log_entry "template_generate_main" "$@"
+   log_entry "template::generate::main" "$@"
 
    local OPTION_EMBEDDED='NO'
 
@@ -925,12 +931,12 @@ template_generate_main()
    esac
 
    local OPTION_FILE
-   local OPTION_PERMISSIONS='NO'
+   local OPTION_PERMISSIONS='YES'
    local OPTION_OPENER="<|"
    local OPTION_CLOSER="|>"
    local OPTION_FILENAME_OPENER=""
    local OPTION_FILENAME_CLOSER=""
-   local OPTION_OVERWRITE="${MULLE_FLAG_MAGNUM_FORCE}"
+   local OPTION_OVERWRITE="${MULLE_FLAG_MAGNUM_FORCE:-NO}"
    local OPTION_WITH_TEMPLATE_DIR='YES'
    local OPTION_BORING_ENVIRONMENT='NO'
    local OPTION_DATE_ENVIRONMENT='YES'
@@ -941,7 +947,7 @@ template_generate_main()
 
    local template_callback
 
-   template_callback="default_template_setup"
+   template_callback="template::generate::default_setup"
 
    while [ $# -ne 0 ]
    do
@@ -956,11 +962,11 @@ template_generate_main()
 
       case "$1" in
          -h*|--help|help)
-            template_generate_write_usage
+            template::generate::usage
          ;;
 
          --callback)
-            [ $# -eq 1 ] && template_generate_write_usage "Missing argument to \"$1\""
+            [ $# -eq 1 ] && template::generate::usage "Missing argument to \"$1\""
             shift
 
             template_callback="$1"
@@ -968,35 +974,35 @@ template_generate_main()
 
          --comment-start)
             shift
-            [ $# -eq 0 ] && template_generate_write_usage
+            [ $# -eq 0 ] && template::generate::usage
 
             OPTION_COMMENT_START="$1"
          ;;
 
          --comment-middle)
             shift
-            [ $# -eq 0 ] && template_generate_write_usage
+            [ $# -eq 0 ] && template::generate::usage
 
             OPTION_COMMENT_MIDDLE="$1"
          ;;
 
          --comment-end)
             shift
-            [ $# -eq 0 ] && template_generate_write_usage
+            [ $# -eq 0 ] && template::generate::usage
 
             OPTION_COMMENT_END="$1"
          ;;
 
          --comment)
             shift
-            [ $# -eq 0 ] && template_generate_write_usage
+            [ $# -eq 0 ] && template::generate::usage
 
             OPTION_COMMENT="$1"
          ;;
 
          --csed|--contents-sed)
             shift
-            [ $# -eq 0 ] && template_generate_write_usage
+            [ $# -eq 0 ] && template::generate::usage
 
             CONTENTS_SED="$1"
          ;;
@@ -1046,35 +1052,35 @@ template_generate_main()
          ;;
 
          -fo|--filename-opener)
-            [ $# -eq 1 ] && template_generate_write_usage "Missing argument to \"$1\""
+            [ $# -eq 1 ] && template::generate::usage "Missing argument to \"$1\""
             shift
 
             OPTION_FILENAME_OPENER="$1"
          ;;
 
          -fc|--filename-closer)
-            [ $# -eq 1 ] && template_generate_write_usage "Missing argument to \"$1\""
+            [ $# -eq 1 ] && template::generate::usage "Missing argument to \"$1\""
             shift
 
             OPTION_FILENAME_CLOSER="$1"
          ;;
 
          -o|--opener)
-            [ $# -eq 1 ] && template_generate_write_usage "Missing argument to \"$1\""
+            [ $# -eq 1 ] && template::generate::usage "Missing argument to \"$1\""
             shift
 
             OPTION_OPENER="$1"
          ;;
 
          -c|--closer)
-            [ $# -eq 1 ] && template_generate_write_usage "Missing argument to \"$1\""
+            [ $# -eq 1 ] && template::generate::usage "Missing argument to \"$1\""
             shift
 
             OPTION_CLOSER="$1"
          ;;
 
          --file)
-            [ $# -eq 1 ] && template_generate_write_usage "Missing argument to \"$1\""
+            [ $# -eq 1 ] && template::generate::usage "Missing argument to \"$1\""
             shift
 
             OPTION_FILE="$1"
@@ -1082,21 +1088,21 @@ template_generate_main()
 
          --fsed|--filename-sed)
             shift
-            [ $# -eq 0 ] && template_generate_write_usage
+            [ $# -eq 0 ] && template::generate::usage
 
             FILENAME_SED="$1"
          ;;
 
          --header-file)
             shift
-            [ $# -eq 0 ] && template_generate_write_usage
+            [ $# -eq 0 ] && template::generate::usage
 
             TEMPLATE_HEADER_FILE="$1"
          ;;
 
          --footer-file)
             shift
-            [ $# -eq 0 ] && template_generate_write_usage
+            [ $# -eq 0 ] && template::generate::usage
 
             TEMPLATE_FOOTER_FILE="$1"
          ;;
@@ -1112,7 +1118,7 @@ template_generate_main()
 
          -*)
             log_error "unknown options \"$1\""
-            template_generate_write_usage
+            template::generate::usage
          ;;
 
          *)
@@ -1132,14 +1138,14 @@ template_generate_main()
 
    if [ "${OPTION_BORING_ENVIRONMENT}" = 'NO' ]
    then
-      contents_filter=template_is_interesting_key
+      contents_filter=template::generate::is_interesting_key
    fi
 
    case "${cmd}" in
       csed)
-         [ $# -eq 0 ] || template_generate_csed_usage "Superflous arguments $*"
+         [ $# -eq 0 ] || template::generate::csed_usage "Superflous arguments $*"
 
-         r_template_contents_replacement_seds "${OPTION_OPENER}" \
+         template::generate::r_content_replacement_seds "${OPTION_OPENER}" \
                                               "${OPTION_CLOSER}" \
                                               "${contents_filter}" \
                                               "${OPTION_DATE_ENVIRONMENT}"
@@ -1147,9 +1153,9 @@ template_generate_main()
       ;;
 
       fsed)
-         [ $# -eq 0 ] || template_generate_fsed_usage "Superflous arguments $*"
+         [ $# -eq 0 ] || template::generate::fsed_usage "Superflous arguments $*"
 
-         r_template_filename_replacement_seds "${OPTION_FILENAME_OPENER}" \
+         template::generate::r_filename_replacement_seds "${OPTION_FILENAME_OPENER}" \
                                               "${OPTION_FILENAME_CLOSER}"
          printf "%s\n" "${RVAL}"
       ;;
@@ -1157,13 +1163,13 @@ template_generate_main()
       write)
          if [ -z "${FILENAME_SED}" ]
          then
-            r_template_filename_replacement_seds "${OPTION_FILENAME_OPENER}" \
+            template::generate::r_filename_replacement_seds "${OPTION_FILENAME_OPENER}" \
                                                  "${OPTION_FILENAME_CLOSER}"
             FILENAME_SED="${RVAL}"
          fi
          if [ -z "${CONTENTS_SED}" ]
          then
-            r_template_contents_replacement_seds "${OPTION_OPENER}" \
+            template::generate::r_content_replacement_seds "${OPTION_OPENER}" \
                                                  "${OPTION_CLOSER}" \
                                                  "${contents_filter}" \
                                                  "${OPTION_DATE_ENVIRONMENT}"
@@ -1184,10 +1190,10 @@ template_generate_main()
 
 
 
-sde_template_main()
+template::generate::sde_main()
 {
    #
    # hackish,  undocumented just for development
    #
-   template_generate_main "write" --template-dir /tmp --callback expand_template_variables "$@"
+   template::generate::main "write" --template-dir /tmp --callback expand_template_variables "$@"
 }
