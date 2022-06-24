@@ -139,7 +139,7 @@ template::generate::r_append_sed_default_var_expansion()
    local key="$4"
    local value="$5"
 
-   [ -z "${c}" ] && internal_fail "can't have no closer"
+   [ -z "${c}" ] && _internal_fail "can't have no closer"
 
    r_escaped_sed_replacement "${value}"
 
@@ -328,7 +328,7 @@ template::generate::r_shell_var_sed()
          ;;
       esac
 
-      if [ ! -z "${ZSH_VERSION}" ]
+      if [ ${ZSH_VERSION+x} ]
       then
          value="${(P)key}"
       else
@@ -650,8 +650,8 @@ template::generate::copy_and_expand()
    local templatefile="$2"
    local outputfile="$3"
 
-   [ -z "${templatefile}" ] && internal_fail "templatefile is empty"
-   [ -z "${outputfile}" ]   && internal_fail "outputfile is empty"
+   [ -z "${templatefile}" ] && _internal_fail "templatefile is empty"
+   [ -z "${outputfile}" ]   && _internal_fail "outputfile is empty"
 
    local permissions
 
@@ -914,7 +914,7 @@ template::generate::main()
    cmd="$1"
    shift
 
-   [ -z "${cmd}" ] && internal_fail "cmd is empty"
+   [ -z "${cmd}" ] && _internal_fail "cmd is empty"
 
    # must be first after command
    case "$1" in
@@ -1183,7 +1183,7 @@ template::generate::main()
       ;;
 
       *)
-         internal_fail "Unknown command \"$1\""
+         _internal_fail "Unknown command \"$1\""
       ;;
    esac
 }
