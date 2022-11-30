@@ -322,6 +322,8 @@ template::generate::r_shell_var_sed()
 
    .foreachline key in ${variablekeys}
    .do
+      log_debug "${key}"
+      
       if [ ! -z "${pattern_function}" ] && ! ${pattern_function} "${key}"
       then
          .continue
@@ -473,7 +475,7 @@ template::generate::cat_template_file()
 
    if ! char="`tail -c 1 "${templatefile}" 2> /dev/null`"
    then
-      fail "\"${templatefile}\" is missing"
+      fail "Template file or directory \"${templatefile}\" is missing"
    fi
 
    case "${char}" in
