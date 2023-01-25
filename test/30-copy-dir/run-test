@@ -84,6 +84,7 @@ main()
    #
    run_mulle_template --clean-env -DKEY="-" "dir" "${directory}/output"
    expect "a-z" "${directory}/output/dir/template"
+   expect "b-y" "${directory}/output/dir/subdir/template"
 
    log_verbose "----- #2 PASSED -----"
 
@@ -91,8 +92,9 @@ main()
    # Copy to an existing directory
    #
    # Should not clobber files, if already present
-   run_mulle_template --clean-env -DKEY="-" "dir" "${directory}/output"
+   run_mulle_template --clean-env -DKEY="--" "dir" "${directory}/output"
    expect "a-z" "${directory}/output/dir/template"
+   expect "b-y" "${directory}/output/dir/subdir/template"
 
    log_verbose "----- #3 PASSED -----"
 
@@ -100,8 +102,9 @@ main()
    # Copy to an existing directory
    #
    # but clobbers with force
-   run_mulle_template --clean-env -f -DKEY="--" "dir" "${directory}/output"
-   expect "a--z" "${directory}/output/dir/template"
+   run_mulle_template --clean-env -f -DKEY="---" "dir" "${directory}/output"
+   expect "a---z" "${directory}/output/dir/template"
+   expect "b---y" "${directory}/output/dir/subdir/template"
 
    log_verbose "----- #4 PASSED -----"
 
@@ -123,7 +126,7 @@ main()
 
 
    log_info "----- ALL PASSED -----"
-
+   cd ..
    rmdir_safer "${directory}"
 }
 

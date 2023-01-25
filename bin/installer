@@ -2,6 +2,8 @@
 #
 # (c) 2015, coded by Nat!, Mulle KybernetiK
 #
+[ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
+
 if [ "${MULLE_NO_COLOR}" != 'YES' ]
 then
    # Escape sequence and resets
@@ -148,6 +150,16 @@ main()
    [ $# -eq 0 ] || shift
    mode=${1:-755}
    [ $# -eq 0 ] || shift
+
+   if [ $# -ne 0 ]
+   then
+      installer_fail "usage: installer [prefix] [mode]"
+   fi
+   case "${prefix}" in
+      -h|--help|help)
+         installer_fail "usage: installer [prefix] [mode]"
+      ;;
+   esac
 
    r_installer_install_prefix "${prefix}"
    prefix="${RVAL}"

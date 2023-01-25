@@ -55,7 +55,7 @@ esac
 
 
 MULLE_EXECUTABLE_VERSION=1.0.2
-MULLE_EXECUTABLE_BASHFUNCTIONS="3.2"
+MULLE_EXECUTABLE_BASHFUNCTIONS="5.1"
 
 ##
 ## MEMO: need the old way here because of --clean-env booter
@@ -74,7 +74,19 @@ MULLE_EXECUTABLE_BASHFUNCTIONS="3.2"
 #
 if ! [ ${MULLE_BASHFUNCTIONS_LIBEXEC_DIR+x} ]
 then
-   MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
+   if ! executable="`command -v "mulle-bashfunctions" `"
+   then
+      echo "mulle-bashfunctions not found in PATH ($PATH)" >&2
+      exit 1
+   fi
+
+   if ! MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`"${executable}" libexec-dir `"
+   then
+      echo "mulle-bashfunctions ($executable) failed unexpectedly ?" >&2
+      exit 1
+   fi
+   unset executable
+
    export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
 fi
 

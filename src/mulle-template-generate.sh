@@ -233,7 +233,15 @@ template::generate::print_csv_pascal_strings()
 
 template::generate::print_csv_pascal_keys_sorted_by_reverse_length()
 {
-   sort -t';' -k 1,1gr -k 2,2 | sed 's/^[^;]*;//'
+   case "${MULLE_UNAME}" in
+      sunos)
+         LC_ALL=C sort -t';' -k 1,1 -k 2,2 | sed 's/^[^;]*;//' | sort -n -r
+      ;;
+
+      *)
+         LC_ALL=C sort -t';' -k 1,1gr -k 2,2 | sed 's/^[^;]*;//'
+      ;;
+   esac
 }
 
 
@@ -507,7 +515,7 @@ template::generate::r_expand_filename()
       return 0
    fi
 
-   if ! RVAL="`LC_ALL=C eval "'${SED:-sed}'" \
+   if ! RVAL="`LC_ALL=C eval sed \
                              "${filename_sed}" \
                              <<< "${filename}" `"
    then
@@ -636,10 +644,10 @@ template::generate::r_comment_for_templatefile()
 
    local expanded
 
-   expanded="`LC_ALL=C eval "'${SED:-sed}'" \
-                                     -e "'${comment_sed}'" \
-                                     "${template_sed}" \
-                                     <<< "${OPTION_COMMENT//\\\\n/$'\n'}" `"
+   expanded="`LC_ALL=C eval sed" \
+                            -e "'${comment_sed}'" \
+                            "${template_sed}" \
+                            <<< "${OPTION_COMMENT//\\\\n/$'\n'}" `"
 
    local line
 
@@ -723,9 +731,9 @@ template::generate::copy_and_expand()
    text="`template::generate::cat_template_file "${templatefile}"`" || exit 1
    if [ ! -z "${template_sed}" ]
    then
-      if ! text="`LC_ALL=C eval "'${SED:-sed}'" \
-                                 "${template_sed}" \
-                                 <<< "${text}" `"
+      if ! text="`LC_ALL=C eval sed \
+                                "${template_sed}" \
+                                <<< "${text}" `"
       then
          fail "Given template sed expression is broken: ${template_sed}"
       fi
