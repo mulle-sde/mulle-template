@@ -1,53 +1,11 @@
-# 🕋 Generate files from templates
+# 
 
 ... for Android, BSDs, Linux, macOS, SunOS, Windows (MinGW, WSL)
 
 Generates a text file from a template file or a folder of files from a folder
 of templates.
 
-| Release Version                                       | Release Notes
-|-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-sde/mulle-template.svg?branch=release) | [RELEASENOTES](RELEASENOTES.md) |
 
-
-
-## Example 
-
-A template file could look like this:
-
-`template`:
-
-``` c
-// Author: <|AUTHOR:-unknown|>
-#include <stdio.h>
-
-int  main( int argc, char *argv[])
-{
-   printf( "%s\n", "<|MESSAGE:-Hello World|>");
-   return( 0);
-}
-```
-
-And would be transformed by `mulle-template` using the contents of the
-environment with
-
-``` sh
-MESSAGE="VfL Bochum 1848" mulle-template generate template -
-```
-
-into:
-
-
-``` c
-// Author: unknown
-#include <stdio.h>
-
-int  main( int argc, char *argv[])
-{
-   printf( "%s\n", "VfL Bochum 1848");
-   return( 0);
-}
-```
 
 
 
@@ -116,7 +74,7 @@ of course.
 A template file contains regular text that is copied unchanged and keys
 delimited by "<|" and "|>" (e.g. <|FOO|>). These are substituted with values
 found in the environment variables. For unset variables you can supply a default
-substitution value (e.g. <|FOO:-no foo|>).
+substitution value (e.g. no foo).
 
 You have a few options, outside of those mentioned in the **fsed** and **csed**
 commands, to customize the templating operation.
@@ -171,6 +129,13 @@ template expansion.
 
 
 
+## Documentation
+
+If there is documentation outside of this README it is in the various
+command help texts within **mulle-template** or in the
+[mulle-sde WiKi](//github.com/mulle-sde/mulle-sde/wiki).
+
+
 
 
 
@@ -178,15 +143,15 @@ template expansion.
 ## Install
 
 See [mulle-sde-developer](//github.com/mulle-sde/mulle-sde-developer) how to
-install mulle-sde, which will also install mulle-template with required
+install mulle-sde, which will also install  with required
 dependencies.
 
-The command to install only the latest mulle-template into
+The command to install only the latest  into
 `/usr/local` (with **sudo**) is:
 
 ``` bash
-curl -L 'https://github.com/mulle-sde/mulle-template/archive/latest.tar.gz' \
- | tar xfz - && cd 'mulle-template-latest' && sudo ./bin/installer /usr/local
+curl -L 'https://github.com///archive/latest.tar.gz' \
+ | tar xfz - && cd '-latest' && sudo ./bin/installer /usr/local
 ```
 
 
@@ -194,5 +159,3 @@ curl -L 'https://github.com/mulle-sde/mulle-template/archive/latest.tar.gz' \
 ## Author
 
 [Nat!](https://mulle-kybernetik.com/weblog) for Mulle kybernetiK
-
-

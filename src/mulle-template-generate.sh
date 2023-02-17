@@ -29,7 +29,7 @@
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
 #
-MULLE_TEMPLATE_GENEREATE_SH="included"
+MULLE_TEMPLATE_GENEREATE_SH='included'
 
 #
 # TEMPLATE
@@ -113,11 +113,16 @@ template::generate::usage()
 
    cat <<EOF >&2
 Usage:
-   ${MULLE_USAGE_NAME} generate [options] <file|dir> [output]
+   ${MULLE_USAGE_NAME} [flags] generate [options] <file|dir> [output]
 
    Copy a template \`dir\` or a template \`file\` to \`output\`, which can also
    be a file or a directory. Keys in the template are expanded while copying.
    You can use '-' for output, to print without generating files.
+   This command will not overwrite existing files. To force overwrites, use
+   the '-f' flag.
+
+Example:
+   mulle-template -f -DCLUB="VfL Bochum 1848" generate ./dox /tmp/test
 
 Options:
 EOF

@@ -54,7 +54,7 @@ case "$1" in
 esac
 
 
-MULLE_EXECUTABLE_VERSION=1.0.2
+MULLE_EXECUTABLE_VERSION=1.0.3
 MULLE_EXECUTABLE_BASHFUNCTIONS="5.1"
 
 ##
@@ -186,7 +186,8 @@ Usage:
    Generate files from templates, by substituting keys enveloped in <| |> with
    values found in the environment with the same key. You can generate a single
    file from a single template or multiple files with a directory containing
-   templates.
+   templates. Unless forced with the '-f' flag, ${MULLE_USAGE_NAME} will _not_
+   overwrite existing files.
 
    If a key is missing you can supply a default replacement text with
    <|KEY:-default|>. A small example:
@@ -255,7 +256,7 @@ template::set_custom_define()
       fail "Invalid Environment key \"${key}\""
    fi
 
-   eval "export ${key}='${value}'"
+   eval "export ${key}=${value}"
 
    log_fluff "Set environment variable \"${key}\" to '${value}'"
 }
@@ -269,20 +270,19 @@ template::set_custom_environment()
 
    local i
 
-   shell_disable_glob; IFS=$'\n'
-   for i in ${defines}
-   do
-      shell_enable_glob; IFS="${DEFAULT_IFS}"
-
+   .foreachline i in ${defines}
+   .do
       template::set_custom_define "${i#-D}"
-   done
-   shell_enable_glob; IFS="${DEFAULT_IFS}"
+   .done
 }
 
 
 template::main()
 {
    local defines
+   local quoted
+   local key
+   local value
 
    #
    # simple option handling
@@ -324,10 +324,14 @@ template::main()
          ;;
 
          -D*)
-            r_add_line "${MULLE_DEFINE_FLAGS}" "$1"
-            MULLE_DEFINE_FLAGS="${RVAL}"
-
-            r_add_line "${defines}" "$1"
+#            r_add_line "${MULLE_DEFINE_FLAGS}" "$1"
+#            MULLE_DEFINE_FLAGS="${RVAL}"
+            # we can grab multiline stuff this way, but can't replace
+            # it with sed :(
+            key="${1%%=*}"
+            value="${1#*=}"
+            printf -v quoted "%s=%q" "${key}" "${value}"
+            r_add_line "${defines}" "${quoted}"
             defines="${RVAL}"
          ;;
 
@@ -363,12 +367,11 @@ template::main()
 
    case "${cmd}" in
       bash-completion)
-         printf "%s\n" "${MULLE_TEMPLATE_LIBEXEC_DIR}/mulle-template-bash-completion.sh"
+         log_warning "bash completion no longer supported"
       ;;
 
       commands)
          echo "
-bash-completion
 clean
 environment
 libexec-dir

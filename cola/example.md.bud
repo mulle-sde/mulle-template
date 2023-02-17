@@ -1,0 +1,29 @@
+## Example 
+
+A template file could look like this:
+
+`template`:
+
+{% includes verbatim "template.md" %}
+
+And would be transformed by `mulle-template` using the contents of the
+environment with
+
+``` sh
+MESSAGE="VfL Bochum 1848" mulle-template generate template -
+```
+
+into:
+
+
+``` c
+// Author: unknown
+#include <stdio.h>
+
+int  main( int argc, char *argv[])
+{
+   printf( "%s\n", "VfL Bochum 1848");
+   return( 0);
+}
+```
+

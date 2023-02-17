@@ -1,56 +1,3 @@
-# 🕋 Generate files from templates
-
-... for Android, BSDs, Linux, macOS, SunOS, Windows (MinGW, WSL)
-
-Generates a text file from a template file or a folder of files from a folder
-of templates.
-
-| Release Version                                       | Release Notes
-|-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-sde/mulle-template.svg?branch=release) | [RELEASENOTES](RELEASENOTES.md) |
-
-
-
-## Example 
-
-A template file could look like this:
-
-`template`:
-
-``` c
-// Author: <|AUTHOR:-unknown|>
-#include <stdio.h>
-
-int  main( int argc, char *argv[])
-{
-   printf( "%s\n", "<|MESSAGE:-Hello World|>");
-   return( 0);
-}
-```
-
-And would be transformed by `mulle-template` using the contents of the
-environment with
-
-``` sh
-MESSAGE="VfL Bochum 1848" mulle-template generate template -
-```
-
-into:
-
-
-``` c
-// Author: unknown
-#include <stdio.h>
-
-int  main( int argc, char *argv[])
-{
-   printf( "%s\n", "VfL Bochum 1848");
-   return( 0);
-}
-```
-
-
-
 ## Commands
 
 
@@ -168,31 +115,5 @@ other personal information. If the template has a line containing
 <|HEADER|> only or <|FOOTER|> only, then the contents of the files given by
 --header-file or --footer-file are inserted. These contents will also undergo
 template expansion.
-
-
-
-
-
-
-
-## Install
-
-See [mulle-sde-developer](//github.com/mulle-sde/mulle-sde-developer) how to
-install mulle-sde, which will also install mulle-template with required
-dependencies.
-
-The command to install only the latest mulle-template into
-`/usr/local` (with **sudo**) is:
-
-``` bash
-curl -L 'https://github.com/mulle-sde/mulle-template/archive/latest.tar.gz' \
- | tar xfz - && cd 'mulle-template-latest' && sudo ./bin/installer /usr/local
-```
-
-
-
-## Author
-
-[Nat!](https://mulle-kybernetik.com/weblog) for Mulle kybernetiK
 
 

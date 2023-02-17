@@ -1,0 +1,12 @@
+{
+   project =
+   {
+      description="🕋 Generate files from templates";
+      domain="github";
+      name="mulle-template";
+      username="mulle-sde";
+      reponame="mulle-template";
+      homepage="https://github.com/mulle-sde/mulle-template";
+      license="BSD-3-Clause"
+   };
+}
