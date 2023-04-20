@@ -1,3 +1,7 @@
+### 1.0.3
+
+* -D can now take values with linefeeds
+
 ### 1.0.2
 
 * Various small improvements
