@@ -54,7 +54,7 @@ case "$1" in
 esac
 
 
-MULLE_EXECUTABLE_VERSION=1.0.3
+MULLE_EXECUTABLE_VERSION=1.1.0
 MULLE_EXECUTABLE_BASHFUNCTIONS="5.1"
 
 ##
@@ -159,7 +159,8 @@ template::print_commands()
    local show_all="${1:-NO}"
 
    SHOWN_COMMANDS="\
-   generate        : create a source file from a template"
+   generate        : create a source file from a template
+   list            : list keys of a template file"
 
    HIDDEN_COMMANDS="\
    libexec-dir     : print path to mulle-sde libexec
@@ -229,6 +230,20 @@ template::usage()
 
    template::print_usage "${MULLE_FLAG_LOG_VERBOSE}" >&2
 
+   exit 1
+}
+
+
+template::list_usage()
+{
+   [ "$#" -ne 0 ] && log_error "$*"
+
+   cat <<EOF
+Usage:
+   ${MULLE_USAGE_NAME} list <file> ...
+
+   List variables contained in a template file.
+EOF
    exit 1
 }
 
@@ -376,6 +391,7 @@ clean
 environment
 libexec-dir
 library-path
+list
 generate
 uname
 version"
@@ -431,6 +447,14 @@ version"
 
       libexec-dir|library-path)
          exekutor printf "%s\n" "${MULLE_TEMPLATE_LIBEXEC_DIR}"
+      ;;
+
+      list)
+         [ $# -eq 0 ] && template::list_usage "Missing file argument"
+
+         rexekutor sed -n -e 's/[^<]*<|\([A-Za-z_][A-Za-z0-9_]*\)|>/\1\n/gp' $* \
+                  | sed -e '/^$/d' \
+                  | sort -u
       ;;
 
       uname)

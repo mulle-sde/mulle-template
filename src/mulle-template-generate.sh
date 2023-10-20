@@ -154,7 +154,9 @@ template::generate::r_append_sed_default_var_expansion()
    # \(<|[^:|]*\)\(:-[^|]\)\{0,1\}|>
    # MEMO: the \{0,1\} makes the preceeding capture optional
 
-   r_concat "${cmdline}" "${prefix}s/${o}${key}\\(:-[^${c:0:1}]*\\)\\{0,1\\}${c}/${RVAL}/g${suffix}" "${sep}"
+   r_concat "${cmdline}" \
+            "${prefix}s/${o}${key}\\(:-[^${c:0:1}]*\\)\\{0,1\\}${c}/${RVAL}/g${suffix}" \
+            "${sep}"
 }
 
 
@@ -172,7 +174,9 @@ template::generate::r_append_sed_var_expansion()
 
    r_escaped_sed_replacement "${value}"
 
-   r_concat "${cmdline}" "${prefix}s/${o}${key}${c}/${RVAL}/g${suffix}" "${sep}"
+   r_concat "${cmdline}" \
+            "${prefix}s/${o}${key}${c}/${RVAL}/g${suffix}" \
+            "${sep}"
 }
 
 
@@ -186,7 +190,9 @@ template::generate::r_append_sed_default_expansion()
    local prefix="$5"
    local suffix="$6"
 
-   r_concat "${cmdline}" "${prefix}s/${o}[^${c:0:1}]*:-\\([^${c:0:1}]*\\)${c}/\1/g${suffix}" "${sep}"
+   r_concat "${cmdline}" \
+            "${prefix}s/${o}[^${c:0:1}]*:-\\([^${c:0:1}]*\\)${c}/\1/g${suffix}" \
+            "${sep}"
 }
 
 
@@ -206,9 +212,24 @@ template::generate::r_generated_seds()
    nowtime="`date "+%H:%M:%S"`"
    nowyear="`date "+%Y"`"
 
-   template::generate::r_append_sed_var_expansion ""        "${o}" "${c}" "${sep}" "${prefix}" "${suffix}" 'DATE' "${nowdate}"
-   template::generate::r_append_sed_var_expansion "${RVAL}" "${o}" "${c}" "${sep}" "${prefix}" "${suffix}" 'TIME' "${nowtime}"
-   template::generate::r_append_sed_var_expansion "${RVAL}" "${o}" "${c}" "${sep}" "${prefix}" "${suffix}" 'YEAR' "${nowyear}"
+   template::generate::r_append_sed_var_expansion ""        "${o}" "${c}" \
+                                                            "${sep}" \
+                                                            "${prefix}" \
+                                                            "${suffix}" \
+                                                            'DATE' \
+                                                            "${nowdate}"
+   template::generate::r_append_sed_var_expansion "${RVAL}" "${o}" "${c}" \
+                                                            "${sep}" \
+                                                            "${prefix}" \
+                                                            "${suffix}" \
+                                                            'TIME' \
+                                                            "${nowtime}"
+   template::generate::r_append_sed_var_expansion "${RVAL}" "${o}" "${c}" \
+                                                            "${sep}" \
+                                                            "${prefix}" \
+                                                            "${suffix}" \
+                                                            'YEAR' \
+                                                            "${nowyear}"
 }
 
 #
@@ -362,9 +383,23 @@ template::generate::r_shell_var_sed()
 
       if [ "${mode}" = "default" ]
       then
-         template::generate::r_append_sed_default_var_expansion "${cmdline}" "${o}" "${c}" "${sep}" "${prefix}" "${suffix}" "${key}" "${value}"
+         template::generate::r_append_sed_default_var_expansion "${cmdline}" \
+                                                                "${o}" \
+                                                                "${c}" \
+                                                                "${sep}" \
+                                                                "${prefix}" \
+                                                                "${suffix}" \
+                                                                "${key}" \
+                                                                "${value}"
       else
-         template::generate::r_append_sed_var_expansion "${cmdline}" "${o}" "${c}" "${sep}" "${prefix}" "${suffix}" "${key}" "${value}"
+         template::generate::r_append_sed_var_expansion "${cmdline}" \
+                                                        "${o}" \
+                                                        "${c}" \
+                                                        "${sep}" \
+                                                        "${prefix}" \
+                                                        "${suffix}" \
+                                                        "${key}" \
+                                                        "${value}"
       fi
 
       cmdline="${RVAL}"
@@ -419,12 +454,22 @@ template::generate::r_content_replacement_seds()
 
    local cmdline
 
-   template::generate::r_shell_var_sed "${opener}" "${closer}" "${sep}" "${prefix}" "${suffix}" "${filter}" "default"
+   template::generate::r_shell_var_sed "${opener}" \
+                                       "${closer}" \
+                                       "${sep}" \
+                                       "${prefix}" \
+                                       "${suffix}" \
+                                       "${filter}" \
+                                       "default"
    cmdline="${RVAL}"
 
    if [ "${dateenv}" != 'NO' ]
    then
-      template::generate::r_generated_seds "${opener}" "${closer}" "${sep}" "${prefix}" "${suffix}"
+      template::generate::r_generated_seds "${opener}" \
+                                           "${closer}" \
+                                           "${sep}" \
+                                           "${prefix}" \
+                                           "${suffix}"
       r_concat "${cmdline}" "${RVAL}" "${sep}"
       cmdline="${RVAL}"
    fi
@@ -433,7 +478,12 @@ template::generate::r_content_replacement_seds()
    # finally append a set that cleans up all values that haven't been
    # expanded of the form <|key:-default|>
    #
-   template::generate::r_append_sed_default_expansion "${cmdline}" "${opener}" "${closer}" "${sep}" "${prefix}" "${suffix}"
+   template::generate::r_append_sed_default_expansion "${cmdline}" \
+                                                      "${opener}" \
+                                                      "${closer}" \
+                                                      "${sep}" \
+                                                      "${prefix}" \
+                                                      "${suffix}"
 
    log_debug "${RVAL}"
 }
@@ -649,7 +699,7 @@ template::generate::r_comment_for_templatefile()
 
    local expanded
 
-   expanded="`LC_ALL=C eval sed" \
+   expanded="`LC_ALL=C eval sed \
                             -e "'${comment_sed}'" \
                             "${template_sed}" \
                             <<< "${OPTION_COMMENT//\\\\n/$'\n'}" `"
@@ -792,7 +842,6 @@ template::generate::do_directory()
    local src_filename
    local dst_filename
    local expanded_filename
-   local rval
 
    if [ "${OPTION_WITH_TEMPLATE_DIR}" = 'YES' ]
    then
@@ -1059,7 +1108,6 @@ template::generate::main()
             FILENAME_SED="-f '$1'"
          ;;
 
-
          --file)
             [ $# -eq 1 ] && template::generate::usage "Missing argument to \"$1\""
             shift
@@ -1272,7 +1320,6 @@ template::generate::main()
          redirect_exekutor "${scriptfile}" printf "%s\n" "${text}"
          echo "${scriptfile}"
       ;;
-
 
       write)
          if [ -z "${FILENAME_SED}" ]
