@@ -7,7 +7,7 @@ of templates.
 
 | Release Version                                       | Release Notes
 |-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-sde/mulle-template.svg?branch=release) | [RELEASENOTES](RELEASENOTES.md) |
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-sde/mulle-template.svg?branch=release)  | [RELEASENOTES](RELEASENOTES.md) |
 
 
 
@@ -168,6 +168,7 @@ other personal information. If the template has a line containing
 <|HEADER|> only or <|FOOTER|> only, then the contents of the files given by
 --header-file or --footer-file are inserted. These contents will also undergo
 template expansion.
+
 
 
 
