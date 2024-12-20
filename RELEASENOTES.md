@@ -1,6 +1,7 @@
 ### 1.1.2
 
-Various small improvements
+* Fixed escaping of special characters (quotes, backslashes, etc.) in template substitutions
+* Various small improvements
 
 ### 1.1.1
 

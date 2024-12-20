@@ -152,7 +152,7 @@ template::generate::r_append_sed_default_var_expansion()
    r_escaped_sed_replacement "${value}"
 
    # \(<|[^:|]*\)\(:-[^|]\)\{0,1\}|>
-   # MEMO: the \{0,1\} makes the preceeding capture optional
+   # MEMO: the \{0,1\} makes the preceding capture optional
 
    r_concat "${cmdline}" \
             "${prefix}s/${o}${key}\\(:-[^${c:0:1}]*\\)\\{0,1\\}${c}/${RVAL}/g${suffix}" \
@@ -169,7 +169,6 @@ template::generate::r_append_sed_var_expansion()
    local sep="$4"
    local prefix="$5"
    local suffix="$6"
-   local key="$7"
    local value="$8"
 
    r_escaped_sed_replacement "${value}"

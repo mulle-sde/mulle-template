@@ -96,6 +96,53 @@ main()
 
    log_verbose "----- #4 PASSED -----"
 
+   # Test double quotes
+   run_mulle_template --clean-env -f -DKEY='"quoted"' "template" "${directory}/output"
+   expect 'a"quoted"z' "${directory}/output"
+
+   log_verbose "----- #5 PASSED -----"
+
+   # Test single quotes
+   run_mulle_template --clean-env -f -DKEY="'single'" "template" "${directory}/output"
+   expect "a'single'z" "${directory}/output"
+
+   log_verbose "----- #6 PASSED -----"
+
+   # Test backslashes
+   run_mulle_template --clean-env -f -DKEY='\back\slash' "template" "${directory}/output"
+   expect 'a\back\slashz' "${directory}/output"
+
+   log_verbose "----- #7 PASSED -----"
+
+   # Test mixed special characters
+   run_mulle_template --clean-env -f -DKEY='"mixed'\''\\chars"' "template" "${directory}/output"
+   expect 'a"mixed'\''\\chars"z' "${directory}/output"
+
+   log_verbose "----- #8 PASSED -----"
+
+   # Test with spaces
+   run_mulle_template --clean-env -f -DKEY="with spaces" "template" "${directory}/output"
+   expect "awith spacesz" "${directory}/output"
+
+   log_verbose "----- #9 PASSED -----"
+
+   # Test with actual linefeeds
+   run_mulle_template --clean-env -f -DKEY=$'line1\nline2' "template" "${directory}/output"
+   expect $'aline1\nline2z' "${directory}/output"
+
+   log_verbose "----- #10 PASSED -----"
+
+   # Test with escaped linefeeds
+   run_mulle_template --clean-env -f -DKEY='line1\\nline2' "template" "${directory}/output"
+   expect 'aline1\\nline2z' "${directory}/output"
+
+   log_verbose "----- #11 PASSED -----"
+
+   # Test with tabs and carriage returns
+   run_mulle_template --clean-env -f -DKEY=$'tab\there\rcarriage' "template" "${directory}/output"
+   expect $'atab\there\rcarriagez' "${directory}/output"
+
+   log_verbose "----- #12 PASSED -----"
 
    log_info "----- ALL PASSED -----"
    cd ..

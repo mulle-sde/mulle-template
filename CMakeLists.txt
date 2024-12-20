@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.15)
 
-project( mulle-template VERSION 1.1.2 LANGUAGES NONE)
+project( mulle-template VERSION 1.1.3 LANGUAGES NONE)
 
 execute_process( COMMAND ./mulle-template version
                  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
