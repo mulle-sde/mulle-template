@@ -127,20 +127,20 @@ main()
    log_verbose "----- #9 PASSED -----"
 
    # Test with actual linefeeds
-   run_mulle_template --clean-env -f -DKEY=$'line1\nline2' "template" "${directory}/output"
-   expect $'aline1\nline2z' "${directory}/output"
+   run_mulle_template --clean-env -f -DKEY=$'line1'$'\n''line2' "template" "${directory}/output"
+   expect $'aline1'$'\n''line2z' "${directory}/output"
 
    log_verbose "----- #10 PASSED -----"
 
    # Test with escaped linefeeds
-   run_mulle_template --clean-env -f -DKEY='line1\\nline2' "template" "${directory}/output"
-   expect 'aline1\\nline2z' "${directory}/output"
+   run_mulle_template --clean-env -f -DKEY='line-1\\nline-2' "template" "${directory}/output"
+   expect 'aline-1\\nline-2z' "${directory}/output"
 
    log_verbose "----- #11 PASSED -----"
 
    # Test with tabs and carriage returns
-   run_mulle_template --clean-env -f -DKEY=$'tab\there\rcarriage' "template" "${directory}/output"
-   expect $'atab\there\rcarriagez' "${directory}/output"
+   run_mulle_template --clean-env -f -DKEY=$'tab'$'\t''here'$'\r''carriage' "template" "${directory}/output"
+   expect $'atab'$'\t''here'$'\r''carriagez' "${directory}/output"
 
    log_verbose "----- #12 PASSED -----"
 

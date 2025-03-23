@@ -1,3 +1,7 @@
+### 1.1.3
+
+* fix single quote escaping
+
 ### 1.1.2
 
 * Fixed escaping of special characters (quotes, backslashes, etc.) in template substitutions

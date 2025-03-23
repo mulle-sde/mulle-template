@@ -144,8 +144,9 @@ template::generate::r_append_sed_default_var_expansion()
    local sep="$4"
    local prefix="$5"
    local suffix="$6"
-   local key="$7"
-   local value="$8"
+   local r_escaper="$7"
+   local key="$8"
+   local value="$9"
 
    [ -z "${c}" ] && _internal_fail "can't have no closer"
 
@@ -154,9 +155,8 @@ template::generate::r_append_sed_default_var_expansion()
    # \(<|[^:|]*\)\(:-[^|]\)\{0,1\}|>
    # MEMO: the \{0,1\} makes the preceding capture optional
 
-   r_concat "${cmdline}" \
-            "${prefix}s/${o}${key}\\(:-[^${c:0:1}]*\\)\\{0,1\\}${c}/${RVAL}/g${suffix}" \
-            "${sep}"
+   ${r_escaper} "${o}${key}\\(:-[^${c:0:1}]*\\)\\{0,1\\}${c}/${RVAL}"
+   r_concat "${cmdline}" "${prefix}s/${RVAL}/g${suffix}" "${sep}"
 }
 
 
@@ -169,13 +169,13 @@ template::generate::r_append_sed_var_expansion()
    local sep="$4"
    local prefix="$5"
    local suffix="$6"
-   local value="$8"
+   local r_escaper="$7"
+   # local key="$8"
+   local value="$9"
 
    r_escaped_sed_replacement "${value}"
-
-   r_concat "${cmdline}" \
-            "${prefix}s/${o}${key}${c}/${RVAL}/g${suffix}" \
-            "${sep}"
+   ${r_escaper} "${o}${key}${c}/${RVAL}"
+   r_concat "${cmdline}" "${prefix}s/${RVAL}/g${suffix}" "${sep}"
 }
 
 
@@ -188,10 +188,10 @@ template::generate::r_append_sed_default_expansion()
    local sep="$4"
    local prefix="$5"
    local suffix="$6"
+   local r_escaper="$7"
 
-   r_concat "${cmdline}" \
-            "${prefix}s/${o}[^${c:0:1}]*:-\\([^${c:0:1}]*\\)${c}/\1/g${suffix}" \
-            "${sep}"
+   ${r_escaper} "${o}[^${c:0:1}]*:-\\([^${c:0:1}]*\\)${c}/\\1"
+   r_concat "${cmdline}" "${prefix}s/${RVAL}/g${suffix}" "${sep}"
 }
 
 
@@ -202,6 +202,7 @@ template::generate::r_generated_seds()
    local sep="$3"
    local prefix="$4"
    local suffix="$5"
+   local r_escaper="$6"
 
    local nowdate
    local nowtime
@@ -215,18 +216,21 @@ template::generate::r_generated_seds()
                                                             "${sep}" \
                                                             "${prefix}" \
                                                             "${suffix}" \
+                                                            "${r_escaper}" \
                                                             'DATE' \
                                                             "${nowdate}"
    template::generate::r_append_sed_var_expansion "${RVAL}" "${o}" "${c}" \
                                                             "${sep}" \
                                                             "${prefix}" \
                                                             "${suffix}" \
+                                                            "${r_escaper}" \
                                                             'TIME' \
                                                             "${nowtime}"
    template::generate::r_append_sed_var_expansion "${RVAL}" "${o}" "${c}" \
                                                             "${sep}" \
                                                             "${prefix}" \
                                                             "${suffix}" \
+                                                            "${r_escaper}" \
                                                             'YEAR' \
                                                             "${nowyear}"
 }
@@ -339,8 +343,9 @@ template::generate::r_shell_var_sed()
    local sep="$3"
    local prefix="$4"
    local suffix="$5"
-   local pattern_function="$6"
-   local mode="$7"
+   local r_escaper="$6"
+   local pattern_function="$7"
+   local mode="$8"
 
    log_entry "template::generate::r_shell_var_sed" "$@"
 
@@ -388,6 +393,7 @@ template::generate::r_shell_var_sed()
                                                                 "${sep}" \
                                                                 "${prefix}" \
                                                                 "${suffix}" \
+                                                                "${r_escaper}" \
                                                                 "${key}" \
                                                                 "${value}"
       else
@@ -397,6 +403,7 @@ template::generate::r_shell_var_sed()
                                                         "${sep}" \
                                                         "${prefix}" \
                                                         "${suffix}" \
+                                                        "${r_escaper}" \
                                                         "${key}" \
                                                         "${value}"
       fi
@@ -417,6 +424,7 @@ template::generate::r_filename_replacement_seds()
    local sep="$3"
    local prefix="$4"
    local suffix="$5"
+   local r_escaper="$6"
 
    r_escaped_sed_pattern "${opener}"
    opener="${RVAL}"
@@ -428,6 +436,7 @@ template::generate::r_filename_replacement_seds()
                                        "${sep}"  \
                                        "${prefix}" \
                                        "${suffix}" \
+                                       "${r_escaper}" \
                                        template::generate::is_filekey
 
    log_debug "${RVAL}"
@@ -443,8 +452,9 @@ template::generate::r_content_replacement_seds()
    local sep="$3"
    local prefix="$4"
    local suffix="$5"
-   local filter="$6"
-   local dateenv="$7"
+   local r_escaper="$6"
+   local filter="$7"
+   local dateenv="$8"
 
    r_escaped_sed_pattern "${opener}"
    opener="${RVAL}"
@@ -458,6 +468,7 @@ template::generate::r_content_replacement_seds()
                                        "${sep}" \
                                        "${prefix}" \
                                        "${suffix}" \
+                                       "${r_escaper}" \
                                        "${filter}" \
                                        "default"
    cmdline="${RVAL}"
@@ -468,7 +479,8 @@ template::generate::r_content_replacement_seds()
                                            "${closer}" \
                                            "${sep}" \
                                            "${prefix}" \
-                                           "${suffix}"
+                                           "${suffix}" \
+                                           "${r_escaper}"
       r_concat "${cmdline}" "${RVAL}" "${sep}"
       cmdline="${RVAL}"
    fi
@@ -482,7 +494,8 @@ template::generate::r_content_replacement_seds()
                                                       "${closer}" \
                                                       "${sep}" \
                                                       "${prefix}" \
-                                                      "${suffix}"
+                                                      "${suffix}" \
+                                                      "${r_escaper}"
 
    log_debug "${RVAL}"
 }
@@ -1024,6 +1037,7 @@ template::generate::main()
    local OPTION_SED_PREFIX="-e '"
    local OPTION_SED_SUFFIX="'"
    local OPTION_SED_SEPARATOR=" "
+   local OPTION_SED_PREFIX_SUFFIX_ESCAPE="r_escaped_singlequotes"
    local template_callback
 
    template_callback="template::generate::default_setup"
@@ -1221,6 +1235,14 @@ template::generate::main()
             OPTION_SED_SUFFIX="$1"
          ;;
 
+         --sed-prefix-suffix-escape)
+            [ $# -eq 1 ] && template::generate::usage "Missing argument to \"$1\""
+            shift
+
+            OPTION_SED_PREFIX_SUFFIX_ESCAPE="$1"
+         ;;
+
+
          --version)
             printf "%s\n" "${VERSION}"
             exit 0
@@ -1264,6 +1286,7 @@ template::generate::main()
                                                         "${OPTION_SEPARATOR}" \
                                                         "${OPTION_SED_PREFIX}" \
                                                         "${OPTION_SED_SUFFIX}" \
+                                                        "${OPTION_SED_PREFIX_SUFFIX_ESCAPE}" \
                                                         "${contents_filter}" \
                                                         "${OPTION_DATE_ENVIRONMENT}"
          printf "%s\n" "${RVAL}"
@@ -1276,6 +1299,7 @@ template::generate::main()
          template::generate::r_content_replacement_seds "${OPTION_OPENER}" \
                                                         "${OPTION_CLOSER}" \
                                                         $'\n' \
+                                                        "" \
                                                         "" \
                                                         "" \
                                                         "${contents_filter}" \
@@ -1297,7 +1321,8 @@ template::generate::main()
                                                          "${OPTION_FILENAME_CLOSER}" \
                                                          "${OPTION_SED_SEPARATOR}" \
                                                          "${OPTION_SED_PREFIX}" \
-                                                         "${OPTION_SED_SUFFIX}"
+                                                         "${OPTION_SED_SUFFIX}" \
+                                                         "${OPTION_SED_PREFIX_SUFFIX_ESCAPE}"
          printf "%s\n" "${RVAL}"
       ;;
 
@@ -1308,6 +1333,7 @@ template::generate::main()
          template::generate::r_filename_replacement_seds "${OPTION_FILENAME_OPENER}" \
                                                          "${OPTION_FILENAME_CLOSER}" \
                                                          $'\n' \
+                                                         "" \
                                                          "" \
                                                          ""
 
@@ -1327,7 +1353,9 @@ template::generate::main()
                                                             "${OPTION_FILENAME_CLOSER}" \
                                                             "${OPTION_SED_SEPARATOR}" \
                                                             "${OPTION_SED_PREFIX}" \
-                                                            "${OPTION_SED_SUFFIX}"
+                                                            "${OPTION_SED_SUFFIX}" \
+                                                            "${OPTION_SED_PREFIX_SUFFIX_ESCAPE}"
+
             FILENAME_SED="${RVAL}"
          fi
          if [ -z "${CONTENTS_SED}" ]
@@ -1337,6 +1365,7 @@ template::generate::main()
                                                            "${OPTION_SED_SEPARATOR}" \
                                                            "${OPTION_SED_PREFIX}" \
                                                            "${OPTION_SED_SUFFIX}" \
+                                                           "${OPTION_SED_PREFIX_SUFFIX_ESCAPE}" \
                                                            "${contents_filter}" \
                                                            "${OPTION_DATE_ENVIRONMENT}"
             CONTENTS_SED="${RVAL}"
