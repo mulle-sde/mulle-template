@@ -149,6 +149,7 @@ template::generate::r_append_sed_default_var_expansion()
    local value="$9"
 
    [ -z "${c}" ] && _internal_fail "can't have no closer"
+   [ -z "${r_escaper}" ] && _internal_fail "can't have no r_escaper"
 
    r_escaped_sed_replacement "${value}"
 
@@ -173,6 +174,8 @@ template::generate::r_append_sed_var_expansion()
    # local key="$8"
    local value="$9"
 
+   [ -z "${r_escaper}" ] && _internal_fail "can't have no r_escaper"
+
    r_escaped_sed_replacement "${value}"
    ${r_escaper} "${o}${key}${c}/${RVAL}"
    r_concat "${cmdline}" "${prefix}s/${RVAL}/g${suffix}" "${sep}"
@@ -189,6 +192,8 @@ template::generate::r_append_sed_default_expansion()
    local prefix="$5"
    local suffix="$6"
    local r_escaper="$7"
+
+   [ -z "${r_escaper}" ] && _internal_fail "can't have no r_escaper"
 
    ${r_escaper} "${o}[^${c:0:1}]*:-\\([^${c:0:1}]*\\)${c}/\\1"
    r_concat "${cmdline}" "${prefix}s/${RVAL}/g${suffix}" "${sep}"
@@ -992,6 +997,11 @@ template::generate::default_setup()
 }
 
 
+function r_nothing_escaped()
+{
+   RVAL="$1"
+}
+
 
 template::generate::main()
 {
@@ -1301,7 +1311,7 @@ template::generate::main()
                                                         $'\n' \
                                                         "" \
                                                         "" \
-                                                        "" \
+                                                        "r_nothing_escaped" \
                                                         "${contents_filter}" \
                                                         "${OPTION_DATE_ENVIRONMENT}"
 
@@ -1335,7 +1345,7 @@ template::generate::main()
                                                          $'\n' \
                                                          "" \
                                                          "" \
-                                                         ""
+                                                         "r_nothing_escaped"
 
          text="${RVAL}"
 
