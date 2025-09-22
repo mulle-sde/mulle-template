@@ -1,0 +1,234 @@
+#! /bin/sh
+
+[ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
+
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
+MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
+export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh"          || exit 1
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
+
+
+run_mulle_template()
+{
+   if [ "$1" = "--clean-env" ]
+   then
+      shift
+
+      log_fluff "####################################"
+      log_fluff ${MULLE_TEMPLATE} --clean-env ${MULLE_TEMPLATE_FLAGS} "$@"
+      log_fluff "####################################"
+
+      exekutor "${MULLE_TEMPLATE}" --clean-env ${MULLE_TEMPLATE_FLAGS} "$@"
+   else
+      log_fluff "####################################"
+      log_fluff ${MULLE_TEMPLATE} ${MULLE_TEMPLATE_FLAGS} "$@"
+      log_fluff "####################################"
+
+      exekutor "${MULLE_TEMPLATE}" ${MULLE_TEMPLATE_FLAGS} "$@"
+   fi
+}
+
+
+expect()
+{
+   local expected="$1"
+   local filename="$2"
+
+   local result
+
+   if ! result="`cat "${filename}" 2> /dev/null`"
+   then
+      fail "${filename} does not exist"
+   fi
+
+   log_debug "${filename}: ${result}"
+   if [ "${expected}" != "${result}" ]
+   then
+      fail "${filename}: \"${result}\" != \"${expected}\""
+   fi
+}
+
+
+expect_file_exists()
+{
+   local filename="$1"
+   local should_exist="$2"
+
+   if [ "${should_exist}" = 'YES' ]
+   then
+      if [ ! -e "${filename}" ]
+      then
+         fail "${filename} should exist but doesn't"
+      fi
+   else
+      if [ -e "${filename}" ]
+      then
+         fail "${filename} should not exist but does"
+      fi
+   fi
+}
+
+
+main()
+{
+   MULLE_TEMPLATE_FLAGS="$@"
+
+   _options_mini_main "$@" && set -x
+
+   MULLE_TEMPLATE_EXTENSION_PATH="${PWD}"
+   export MULLE_TEMPLATE_EXTENSION_PATH
+
+   local directory
+
+   r_make_tmp_directory
+   directory="${RVAL:-/tmp/build}"
+
+   #
+   # Test 1: OPTION_MODE=create (default behavior)
+   # Should not overwrite existing files
+   #
+   log_info "Testing OPTION_MODE=create (default)"
+
+   # First generation should work
+   run_mulle_template --clean-env -DKEY="first" -DKEY2="2nd" -DKEY3="3rd" "template" "${directory}/output"
+   expect "Line 1: first
+Line 2: 2nd
+Line 3: 3rd" "${directory}/output"
+
+   log_verbose "----- Test 1a PASSED -----"
+
+   # Second generation should not overwrite existing file
+   run_mulle_template --clean-env -DKEY="second" -DKEY2="2nd-v2" -DKEY3="3rd-v2" "template" "${directory}/output"
+
+   # File content should remain unchanged (not overwritten)
+   expect "Line 1: first
+Line 2: 2nd
+Line 3: 3rd" "${directory}/output"
+
+   log_verbose "----- Test 1b PASSED -----"
+
+   #
+   # Test 2: OPTION_MODE=overwrite
+   # Should overwrite existing files
+   #
+   log_info "Testing OPTION_MODE=overwrite"
+
+   run_mulle_template --clean-env -f -DKEY="overwritten" -DKEY2="2nd-ow" -DKEY3="3rd-ow" "template" "${directory}/output"
+   expect "Line 1: overwritten
+Line 2: 2nd-ow
+Line 3: 3rd-ow" "${directory}/output"
+
+   log_verbose "----- Test 2 PASSED -----"
+
+   #
+   # Test 3: OPTION_MODE=append
+   # Should append to existing files
+   #
+   log_info "Testing OPTION_MODE=append"
+
+   run_mulle_template --clean-env -DKEY="appended" -DKEY2="2nd-app" -DKEY3="3rd-app" generate --append "template" "${directory}/output"
+   expect "Line 1: overwritten
+Line 2: 2nd-ow
+Line 3: 3rd-ow
+Line 1: appended
+Line 2: 2nd-app
+Line 3: 3rd-app" "${directory}/output"
+
+   log_verbose "----- Test 3 PASSED -----"
+
+   #
+   # Test 4: OPTION_MODE=prepend
+   # Should prepend to existing files
+   #
+   log_info "Testing OPTION_MODE=prepend"
+
+   run_mulle_template --clean-env -DKEY="prepended" -DKEY2="2nd-pre" -DKEY3="3rd-pre" generate --prepend "template" "${directory}/output"
+   expect "Line 1: prepended
+Line 2: 2nd-pre
+Line 3: 3rd-pre
+Line 1: overwritten
+Line 2: 2nd-ow
+Line 3: 3rd-ow
+Line 1: appended
+Line 2: 2nd-app
+Line 3: 3rd-app" "${directory}/output"
+
+   log_verbose "----- Test 4 PASSED -----"
+
+   #
+   # Test 5: Test mixing modes (should fail)
+   #
+   log_info "Testing incompatible mode combinations"
+
+   if run_mulle_template --clean-env generate --append --prepend "template" "${directory}/mixed"
+   then
+      fail "Should have failed: can't mix --append and --prepend"
+   fi
+
+   # -f should be compatible with --append and --prepend (these should succeed)
+   run_mulle_template --clean-env -f -DKEY="mixed-append-f" -DKEY2="2nd-maf" -DKEY3="3rd-maf" generate --append "template" "${directory}/mixed-append-f"
+   expect "Line 1: mixed-append-f
+Line 2: 2nd-maf
+Line 3: 3rd-maf" "${directory}/mixed-append-f"
+
+   run_mulle_template --clean-env -f -DKEY="mixed-prepend-f" -DKEY2="2nd-mpf" -DKEY3="3rd-mpf" generate --prepend "template" "${directory}/mixed-prepend-f"
+   expect "Line 1: mixed-prepend-f
+Line 2: 2nd-mpf
+Line 3: 3rd-mpf" "${directory}/mixed-prepend-f"
+
+   log_verbose "----- Test 5 PASSED -----"
+
+   #
+   # Test 6: Test -f flag with OPTION_MODE
+   # -f should force overwrite when OPTION_MODE=DEFAULT
+   #
+   log_info "Testing -f flag with OPTION_MODE"
+
+   # Reset file
+   run_mulle_template --clean-env -f -DKEY="reset" -DKEY2="2nd-r" -DKEY3="3rd-r" "template" "${directory}/output"
+
+   # -f should work like --overwrite for DEFAULT mode
+   run_mulle_template --clean-env -f -DKEY="forced" -DKEY2="2nd-f" -DKEY3="3rd-f" "template" "${directory}/output"
+   expect "Line 1: forced
+Line 2: 2nd-f
+Line 3: 3rd-f" "${directory}/output"
+
+   log_verbose "----- Test 6 PASSED -----"
+
+   #
+   # Test 7: Test append/prepend on non-existent file (should work like create)
+   #
+   log_info "Testing append/prepend on non-existent files"
+
+   # Remove the file first
+   rm -f "${directory}/newfile"
+
+   # Append to non-existent file should create it
+   run_mulle_template --clean-env -DKEY="new-append" -DKEY2="2nd-na" -DKEY3="3rd-na" generate --append "template" "${directory}/newfile"
+   expect "Line 1: new-append
+Line 2: 2nd-na
+Line 3: 3rd-na" "${directory}/newfile"
+
+   # Remove and test prepend
+   rm -f "${directory}/newfile"
+   run_mulle_template --clean-env -DKEY="new-prepend" -DKEY2="2nd-np" -DKEY3="3rd-np" generate --prepend "template" "${directory}/newfile"
+   expect "Line 1: new-prepend
+Line 2: 2nd-np
+Line 3: 3rd-np" "${directory}/newfile"
+
+   log_verbose "----- Test 7 PASSED -----"
+
+   log_info "----- ALL PASSED -----"
+   cd ..
+   rmdir_safer "${directory}"
+}
+
+init()
+{
+   MULLE_TEMPLATE="${MULLE_TEMPLATE:-${PWD}/../../mulle-template}"
+}
+
+init "$@"
+main "$@"

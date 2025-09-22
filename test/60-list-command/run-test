@@ -1,0 +1,132 @@
+#! /bin/sh
+
+[ "${TRACE}" = 'YES' ] && set -x && : "$0" "$@"
+
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
+MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
+export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh"          || exit 1
+. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
+###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
+
+
+run_mulle_template()
+{
+   if [ "$1" = "--clean-env" ]
+   then
+      shift
+
+      log_fluff "####################################"
+      log_fluff ${MULLE_TEMPLATE} --clean-env ${MULLE_TEMPLATE_FLAGS} "$@"
+      log_fluff "####################################"
+
+      exekutor "${MULLE_TEMPLATE}" --clean-env ${MULLE_TEMPLATE_FLAGS} "$@"
+   else
+      log_fluff "####################################"
+      log_fluff ${MULLE_TEMPLATE} ${MULLE_TEMPLATE_FLAGS} "$@"
+      log_fluff "####################################"
+
+      exekutor "${MULLE_TEMPLATE}" ${MULLE_TEMPLATE_FLAGS} "$@"
+   fi
+}
+
+
+main()
+{
+   MULLE_TEMPLATE_FLAGS="$@"
+
+   _options_mini_main "$@" && set -x
+
+   MULLE_TEMPLATE_EXTENSION_PATH="${PWD}"
+   export MULLE_TEMPLATE_EXTENSION_PATH
+
+   #
+   # Test 1: Basic list command with multiple variables
+   # Should list all unique variables found in template
+   #
+   log_info "Testing basic list command with multiple variables"
+
+   result="`run_mulle_template --clean-env list \"template-vars\"`"
+   if [ "${result}" != "COMPLEX_VAR
+KEY
+KEY2
+KEY3
+SIMPLE" ]
+   then
+      fail "Unexpected result: '${result}'"
+   fi
+
+   log_verbose "----- Test 1 PASSED -----"
+
+   #
+   # Test 2: List command with template containing no variables
+   # Should produce empty output
+   #
+   log_info "Testing list command with no variables"
+
+   result="`run_mulle_template --clean-env list \"template-empty\"`"
+   if [ -n "${result}" ]
+   then
+      fail "Expected empty result, got: '${result}'"
+   fi
+
+   log_verbose "----- Test 2 PASSED -----"
+
+   #
+   # Test 3: List command with non-existent file
+   # Should fail with appropriate error
+   #
+   log_info "Testing list command with missing file"
+
+   if run_mulle_template --clean-env list "template-missing" > /dev/null 2>&1
+   then
+      fail "Missing template file should be an error"
+   fi
+   log_warning "Failed as expected"
+
+   log_verbose "----- Test 3 PASSED -----"
+
+   #
+   # Test 4: List command with multiple files
+   # Should list variables from all files
+   #
+   log_info "Testing list command with multiple files"
+
+   result="`run_mulle_template --clean-env list \"template-vars\" \"template-empty\"`"
+   if [ "${result}" != "COMPLEX_VAR
+KEY
+KEY2
+KEY3
+SIMPLE" ]
+   then
+      fail "Unexpected result for multiple files: '${result}'"
+   fi
+
+   log_verbose "----- Test 4 PASSED -----"
+
+   #
+   # Test 5: List command with variables that have underscores and numbers
+   # Should properly parse complex variable names
+   #
+   log_info "Testing list command with complex variable names"
+
+   result="`run_mulle_template --clean-env list \"template-complex\"`"
+   if [ "${result}" != "COMPLEX_VAR
+VAR_123
+VAR_WITH_UNDERSCORES" ]
+   then
+      fail "Unexpected result for complex variables: '${result}'"
+   fi
+
+   log_verbose "----- Test 5 PASSED -----"
+
+   log_info "----- ALL PASSED -----"
+}
+
+init()
+{
+   MULLE_TEMPLATE="${MULLE_TEMPLATE:-${PWD}/../../mulle-template}"
+}
+
+init "$@"
+main "$@"

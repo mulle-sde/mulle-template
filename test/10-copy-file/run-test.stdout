@@ -1,0 +1,4 @@
+ls: cannot access 'template-notthere': No such file or directory
+mulle-template fatal error: Template file or directory "template-notthere" is missing
+Failed as expected
+----- ALL PASSED -----

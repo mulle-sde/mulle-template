@@ -754,7 +754,9 @@ template::generate::copy_and_expand()
    [ -z "${outputfile}" ]   && _internal_fail "outputfile is empty"
 
    local permissions
+   local exists
 
+   exists='NO'
    if [ "${outputfile}" != '-' ]
    then
       if [ "${templatefile}" -ef "${outputfile}" ]
@@ -765,7 +767,7 @@ template::generate::copy_and_expand()
 
       if [ -f "${outputfile}" ]
       then
-         if [ "${OPTION_OVERWRITE}" = 'NO' ]
+         if [ "${OPTION_MODE}" = 'DEFAULT' ]
          then
             log_fluff "\"${templatefile}\" !! \"${outputfile}\" (exists)"
             return 4
@@ -776,6 +778,7 @@ template::generate::copy_and_expand()
             permissions="`lso "${outputfile}"`"
             exekutor chmod ug+w "${outputfile}" || exit 1
          fi
+         exists='YES'
       else
          #
          # Directory
@@ -827,10 +830,34 @@ template::generate::copy_and_expand()
       rexekutor printf "%s\n" "${text}"
    else
       log_debug "${C_RESET_BOLD}\"${templatefile}\" -> \"${outputfile}\""
-      redirect_exekutor "${outputfile}" printf "%s\n" "${text}" \
-         || fail "failed to write to \"${outputfile}\" (${PWD#"${MULLE_USER_PWD}/"})"
 
-      log_verbose "Created ${C_RESET_BOLD}${outputfile#"${MULLE_USER_PWD}/"}"
+      local original
+      local verb
+
+      verb='Created'
+      if [ "${exists}" = 'YES' ]
+      then
+         case "${OPTION_MODE}" in
+            'APPEND')
+               original="$(cat "${outputfile}")"
+               r_add_line "${original}" "${text}"
+               text="${RVAL}"
+               verb='Appended to'
+            ;;
+
+            'PREPEND')
+               original="$(cat "${outputfile}")"
+               r_add_line "${text}" "${original}"
+               text="${RVAL}"
+               verb='Prepended to'
+            ;;
+         esac
+      fi
+
+      redirect_exekutor "${outputfile}" printf "%s\n" "${text}" \
+      || fail "failed to write to \"${outputfile}\" (${PWD#"${MULLE_USER_PWD}/"})"
+
+      log_verbose "${verb} ${C_RESET_BOLD}${outputfile#"${MULLE_USER_PWD}/"}"
 
       #
       # Permissions 2
@@ -1036,7 +1063,7 @@ template::generate::main()
    local OPTION_CLOSER="|>"
    local OPTION_FILENAME_OPENER=""
    local OPTION_FILENAME_CLOSER=""
-   local OPTION_OVERWRITE="${MULLE_FLAG_MAGNUM_FORCE:-NO}"
+   local OPTION_MODE='DEFAULT'
    local OPTION_WITH_TEMPLATE_DIR='YES'
    local OPTION_BORING_ENVIRONMENT='NO'
    local OPTION_DATE_ENVIRONMENT='YES'
@@ -1152,12 +1179,25 @@ template::generate::main()
             TEMPLATE_FOOTER_FILE="$1"
          ;;
 
-         --overwrite)
-            OPTION_OVERWRITE='YES'
+         --append)
+            [ "${OPTION_MODE}" != 'DEFAULT' -a "${OPTION_MODE}" != 'APPEND' ] \
+            && fail "can't mix $1 with --prepend or --overwrite"
+
+            OPTION_MODE='APPEND'
          ;;
 
-         --no-overwrite)
-            OPTION_OVERWRITE='NO'
+         --prepend)
+            [ "${OPTION_MODE}" != 'DEFAULT' -a "${OPTION_MODE}" != 'PREPEND' ] \
+            && fail "can't mix $1 with --append or --overwrite"
+
+            OPTION_MODE='PREPEND'
+         ;;
+
+         --overwrite)
+            [ "${OPTION_MODE}" != 'DEFAULT' -a "${OPTION_MODE}" != 'OVERWRITE' ] \
+            && fail "can't mix $1 with --append or --prepend"
+
+            OPTION_MODE='OVERWRITE'
          ;;
 
          --with-template-dir)
@@ -1166,10 +1206,6 @@ template::generate::main()
 
          --without-template-dir)
             OPTION_WITH_TEMPLATE_DIR='NO'
-         ;;
-
-         --no-overwrite)
-            OPTION_OVERWRITE='NO'
          ;;
 
          -p|--permissions)
@@ -1275,6 +1311,11 @@ template::generate::main()
       shift
    done
 
+   if [ "${MULLE_FLAG_MAGNUM_FORCE}" = 'YES' -a "${OPTION_MODE}" = 'DEFAULT' ]
+   then
+      OPTION_MODE='OVERWRITE'
+   fi
+
    if [ "${OPTION_EMBEDDED}" = 'NO' ]
    then
       options_setup_trace "${MULLE_TRACE}" && set -x
@@ -1289,7 +1330,7 @@ template::generate::main()
 
    case "${cmd}" in
       csed)
-         [ $# -eq 0 ] || template::generate::csed_usage "Superflous arguments $*"
+         [ $# -eq 0 ] || template::generate::csed_usage "Superfluous arguments $*"
 
          template::generate::r_content_replacement_seds "${OPTION_OPENER}" \
                                                         "${OPTION_CLOSER}" \
@@ -1325,7 +1366,7 @@ template::generate::main()
       ;;
 
       fsed)
-         [ $# -eq 0 ] || template::generate::fsed_usage "Superflous arguments $*"
+         [ $# -eq 0 ] || template::generate::fsed_usage "Superfluous arguments $*"
 
          template::generate::r_filename_replacement_seds "${OPTION_FILENAME_OPENER}" \
                                                          "${OPTION_FILENAME_CLOSER}" \
