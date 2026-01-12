@@ -1,3 +1,10 @@
+## 1.2.0
+
+
+
+* added --prepend and --append mode to the already exisiting --overwrite
+
+
 ### 1.1.4
 
 * fix missing nothing escaper when no escaping is needed but the escaper still needs to run
