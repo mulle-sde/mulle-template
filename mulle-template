@@ -478,8 +478,6 @@ version"
          template::generate::main write "${cmd}" "$@"
       ;;
    esac
-
-   return $rval
 }
 
 
