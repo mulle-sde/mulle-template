@@ -247,9 +247,12 @@ template::generate::r_generated_seds()
 #
 template::generate::get_environment_keys()
 {
-   env \
-      | sed -e 's/^\([^=]*\)=.*/\1/' \
-      | LC_ALL=C sort
+   if [ ${BASH_VERSION+x} ]
+   then
+      compgen -e
+   else
+      env | sed -n -e 's/^\([A-Za-z_][A-Za-z_0-9]*\)=.*/\1/p'
+   fi | LC_ALL=C sort
 }
 
 
