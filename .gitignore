@@ -19,3 +19,4 @@ build-*/
 .mulle/etc/make
 dox.unreleased
 .graveyard
+.roam/
