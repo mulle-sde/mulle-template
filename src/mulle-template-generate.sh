@@ -1381,9 +1381,6 @@ template::generate::main()
       ;;
 
       fsed-script)
-         local scriptfile
-         local text
-
          template::generate::r_filename_replacement_seds "${OPTION_FILENAME_OPENER}" \
                                                          "${OPTION_FILENAME_CLOSER}" \
                                                          $'\n' \
